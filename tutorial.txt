@@ -1,0 +1,3 @@
+- @SessionAttributes and @ModelAttribute
+- testing mvc
+- error handling using @ResponseStatus and @ControllerAdvice

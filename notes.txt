@@ -1,0 +1,29 @@
+On an incoming request, any methods annotated with @ModelAttribute are called before any controller handler method.
+It pre populates the Model with an Address object.
+
+@ModelAttribute("address")
+public Address addAddress() {
+	return new Address();
+}
+
+
+Spring’s @SessionAttributes is used on a controller to designate which model attributes should be stored in the session
+@SessionAttributes allows you to do is tell Spring which of your model attributes will also be copied to HttpSession before rendering the view
+
+@Controller
+@SessionAttributes("address")
+public class MyController {
+  ...
+}
+
+The flow of execution is
+1. invoke all @ModelAttribute methods to add objects to the Model.
+2. invoke the actual endpoint handler - the method with @GetMapping
+3. After the handler is called, the view is rendered then stuff is added to the Session.
+
+
+
+
+
+
+

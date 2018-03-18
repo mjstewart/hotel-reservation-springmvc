@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Select dates</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="ui form">
+        <div class="two fields">
+            <div class="field required">
+                <label for="checkInDate">Check in date</label>
+                <input id="checkInDate" type="text"/>
+                <input type="hidden" id="altCheckInDatePicker">
+            </div>
+            <div class="field required">
+                <label for="checkOutDate">Check out date</label>
+                <input id="checkOutDate" type="text"/>
+            </div>
+        </div>
+        <div class="required field">
+            <label for="estimatedCheckInTime">Estimated check in time</label>
+
+            <select id="estimatedCheckInTime" class="ui fluid dropdown">
+                <option value="">Gender</option>
+                <option value="1">Male</option>
+                <option value="0">Female</option>
+            </select>
+        </div>
+
+        <div class="required inline field">
+            <div class="ui checkbox">
+                <input type="checkbox">
+                <label>I agree to the Terms and Conditions</label>
+            </div>
+        </div>
+    </div>
+</div>
+<th:block layout:fragment="script">
+    <script>
+        $('.ui.dropdown').dropdown();
+
+        const dateFormat = "dd/mm/yy";
+
+        // Need to use hidden fields to transform date into correct format for server to parse in POST.
+        const altFormat = "yy-mm-dd";
+
+        $(document).ready(function () {
+
+            const checkInDatePicker = $("#checkInDatePicker")
+                .datepicker({
+                    dateFormat: dateFormat,
+                    altFormat: altFormat,
+                    altField: "#altCheckInDatePicker",
+                    minDate: 0
+                }).on("change", function () {
+                    checkOutDatePicker.datepicker("option", "minDate", getDate(this))
+                });
+
+            const checkOutDatePicker = $("#checkOutDatePicker")
+                .datepicker({
+                    dateFormat: dateFormat,
+                    altFormat: altFormat,
+                    altField: "#altCheckOutDatePicker",
+                    minDate: 0
+                })
+                .on("change", updatePrice);
+
+
+            function getDate(element) {
+                var date;
+                try {
+                    date = $.datepicker.parseDate(dateFormat, element.value);
+                } catch (error) {
+                    date = null;
+                }
+                return date;
+            }
+
+            $("#lateCheckout").change(function () {
+                updatePrice();
+            })
+        });
+
+    </script>
+</th:block>
+
+</body>
+</html>
