@@ -9,13 +9,50 @@
     <title layout:title-pattern="$LAYOUT_TITLE - $CONTENT_TITLE" th:text="#{app.name}"></title>
 
     <link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}"/>
-    <link rel="stylesheet" type="text/css" href="/webjars/Semantic-UI/2.2.10/semantic.min.css"/>
-    <script src="/webjars/jquery/3.3.1/jquery.min.js"></script>
-    <script src="/webjars/Semantic-UI/2.2.10/semantic.min.js"></script>
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/Semantic-UI/2.2.10/semantic.min.css}"/>
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/jquery-ui/1.12.1/jquery-ui.min.css}"/>
+    <script th:src="@{/webjars/jquery/3.3.1/jquery.min.js}"></script>
+    <script th:src="@{/webjars/jquery-ui/1.12.1/jquery-ui.min.js}"></script>
+    <script th:src="@{/webjars/Semantic-UI/2.2.10/semantic.min.js}"></script>
+    <script th:src="@{/js/core.js}"></script>
 </head>
 <body>
 
+<div class="ui inverted segment">
+    <div class="ui inverted secondary pointing menu">
+        <a class="item" th:classappend="${#request.getRequestURI().endsWith('/')} ? 'active'" href="/">
+            Home
+        </a>
+        <div class="right menu">
+            <a class="item" th:classappend="${#request.getRequestURI().endsWith('/register')} ? 'active'" href="/register">
+                Register
+            </a>
+            <a class="item" th:classappend="${#request.getRequestURI().endsWith('/admin')} ? 'active'" href="/admin">
+                Admin
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="ui container" layout:fragment="content"></div>
+
+<div id="dimmer" class="ui dimmer">
+    <div class="ui large loader"></div>
+</div>
+
+<div class="ui modal">
+    <div class="header">
+        Error
+    </div>
+    <div class="content">
+        <p>Sorry, there are currently errors with the server.</p>
+    </div>
+    <div class="actions">
+        <div class="ui right icon button approve">
+            Got it
+        </div>
+    </div>
+</div>
 
 <th:block layout:fragment="script"></th:block>
 </body>

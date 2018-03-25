@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<body>
+
+<th:block th:fragment="globalErrors(errors)">
+    <div th:unless="${errors.isEmpty()}" class="ui negative message" id="globalValidationErrors"
+         th:with="hasManyErrors=${errors.size() > 1}">
+        <div class="header">
+            There were some errors with your submission
+        </div>
+
+        <ul class="list" th:if="${hasManyErrors}">
+            <li th:each="err : ${errors}" th:text="${err}"></li>
+        </ul>
+
+        <th:block th:unless="${hasManyErrors}" th:text="${errors.get(0)}">
+        </th:block>
+    </div>
+</th:block>
+
+<div th:fragment="reservationFlowSteps(reservationFlow)" class="ui fluid mini steps">
+    <div class="step" th:each="stepDescription,stat : ${reservationFlow.stepDescriptions}"
+         th:with="isActive=${stat.index == reservationFlow.step},isCompleted=${stat.index lt reservationFlow.step}"
+         th:classappend="${isActive} ? 'active' : (${isCompleted} ? 'completed')">
+        <div class="content">
+            <div class="title" th:text="|${stat.index + 1}. ${stepDescription.title}|"></div>
+        </div>
+    </div>
+</div>
+
+
+<div th:fragment="roomCosts" id="roomCostWrapper"
+     th:with="hasErrors=${reservationFlow.reservation.dates.totalNights() < 0}">
+
+    <div class="ui negative message" th:if="${hasErrors}">
+        Unable to calculate room costs, please ensure all fields are valid
+    </div>
+
+    <div class="table-overflow">
+        <table class="ui celled table" th:unless="${hasErrors}">
+            <thead>
+            <tr>
+                <th># Nights</th>
+                <th>Per night</th>
+                <th th:if="${reservationFlow.reservation.dates.lateCheckout}">Late check out fee</th>
+                <th>Total (excl GST)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td th:text="${reservationFlow.reservation.dates.totalNights()}"></td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></td>
+
+                <td th:if="${reservationFlow.reservation.dates.lateCheckout}"
+                    th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.hotel.lateCheckoutFee)}"></td>
+
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCostWithLateCheckoutFee())}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!--&lt;!&ndash;use a different id so ajax post can route to mobile fragment &ndash;&gt;-->
+<!--<div th:fragment="roomCostsMobile" id="roomCostWrapperMobile"-->
+     <!--th:with="hasErrors=${reservationFlow.reservation.dates.totalNights() < 0}">-->
+
+    <!--<div class="ui negative message" th:if="${hasErrors}">-->
+        <!--Unable to calculate room costs, please ensure all fields are valid-->
+    <!--</div>-->
+
+    <!--<div class="ui segment" th:unless="${hasErrors}">-->
+        <!--<div class="ui grid">-->
+            <!--<div class="row">-->
+                <!--<div class="eight wide column">-->
+                    <!--<p class="bold"># Nights</p>-->
+                <!--</div>-->
+                <!--<div class="eight wide column">-->
+                    <!--<p th:text="${reservationFlow.reservation.dates.totalNights()}"></p>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="row">-->
+                <!--<div class="eight wide column">-->
+                    <!--<p class="bold">Per night</p>-->
+                <!--</div>-->
+                <!--<div class="eight wide column">-->
+                    <!--<p th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></p>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="row" th:if="${reservationFlow.reservation.dates.lateCheckout}">-->
+                <!--<div class="eight wide column">-->
+                    <!--<p class="bold">Late check out fee</p>-->
+                <!--</div>-->
+                <!--<div class="eight wide column">-->
+                    <!--<p th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.hotel.lateCheckoutFee)}"></p>-->
+                <!--</div>-->
+            <!--</div>-->
+            <!--<div class="row">-->
+                <!--<div class="eight wide column">-->
+                    <!--<p class="bold">Total (excl GST)</p>-->
+                <!--</div>-->
+                <!--<div class="eight wide column">-->
+                    <!--<p th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCostWithLateCheckoutFee())}"></p>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+<!--</div>-->
+
+</div>
+</body>
+</html>

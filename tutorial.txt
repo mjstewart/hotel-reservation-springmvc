@@ -1,3 +1,12 @@
 - @SessionAttributes and @ModelAttribute
 - testing mvc
 - error handling using @ResponseStatus and @ControllerAdvice
+- general error templates. /templates/error/404.html, 5xx.html etc.
+- Customise JPA validation messages via ValidationMessages.properties
+- messages.properties for common variables
+- thymeleaf, you don't need to use get/set, automatically adds them using java bean convention.
+- BindingResult must be directly after the @Valid object.
+  https://stackoverflow.com/questions/30297719/cannot-get-validation-working-with-spring-boot-and-thymeleaf/30298348
+
+
+- control f5 refresh chrome if you change css...

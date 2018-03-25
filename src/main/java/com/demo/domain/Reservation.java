@@ -1,16 +1,10 @@
 package com.demo.domain;
 
-import javafx.util.Pair;
-import org.springframework.format.annotation.DateTimeFormat;
-
 import javax.persistence.*;
+import javax.validation.Valid;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Entity
 public class Reservation {
@@ -35,7 +29,8 @@ public class Reservation {
     private Set<Guest> guests = new HashSet<>();
 
     @Embedded
-    private ReservationDates reservationDates;
+    @Valid
+    private ReservationDates dates = new ReservationDates();
 
     // no CascadeType since Extra already has an id associated to it.
     @ManyToMany
@@ -120,51 +115,53 @@ public class Reservation {
         generalExtras = new HashSet<>();
     }
 
-    public ReservationDates getReservationDates() {
-        return reservationDates;
+    public ReservationDates getDates() {
+        return dates;
     }
 
-    public void setReservationDates(ReservationDates reservationDates) {
-        this.reservationDates = reservationDates;
+    public void setDates(ReservationDates dates) {
+        this.dates = dates;
     }
 
-//    /**
-//     * Calculates the chargeable late fee price only if the user has selected the late checkout option.
-//     */
-//    public BigDecimal getChargeableLateCheckoutFee() {
-//        return lateCheckout ? getLateCheckoutFee() : BigDecimal.ZERO;
-//    }
-//
-//    /**
-//     * The late checkout fee depending on the type of room.
-//     * For the actual chargeable fee, use {@link #getChargeableLateCheckoutFee()}
-//     */
-//    public BigDecimal getLateCheckoutFee() {
-//        switch (room.getRoomType()) {
-//            case Luxury:
-//            case Business:
-//                return BigDecimal.ZERO;
-//            default:
-//                return room.getHotel().getLateCheckoutFee();
-//        }
-//    }
-//
-//
-//
-//
-//    /**
-//     * @return Total nights * per night cost
-//     */
-//    public BigDecimal getTotalRoomCost() {
-//        return room.getCostPerNight().multiply(new BigDecimal(getTotalNights()));
-//    }
-//
-//    /**
-//     * @return {@link #getTotalRoomCost} + {@link #getChargeableLateCheckoutFee}
-//     */
-//    public BigDecimal getTotalRoomCostWithLateCheckoutFee() {
-//        return getTotalRoomCost().add(getChargeableLateCheckoutFee());
-//    }
+    /**
+     * Calculates the chargeable late fee price only if the user has selected the late checkout option.
+     */
+    public BigDecimal getChargeableLateCheckoutFee() {
+        return dates.isLateCheckout() ? getLateCheckoutFee() : BigDecimal.ZERO;
+    }
+
+    /**
+     * The late checkout fee depending on the type of room.
+     * For the actual chargeable fee, use {@link #getChargeableLateCheckoutFee()}
+     */
+    public BigDecimal getLateCheckoutFee() {
+        switch (room.getRoomType()) {
+            case Luxury:
+            case Business:
+                return BigDecimal.ZERO;
+            default:
+                return room.getHotel().getLateCheckoutFee();
+        }
+    }
+
+
+    /**
+     * @return Total nights * per night cost
+     */
+    public BigDecimal getTotalRoomCost() {
+        long nights = dates.totalNights();
+        if (nights == 0) {
+            return BigDecimal.ZERO;
+        }
+        return room.getCostPerNight().multiply(BigDecimal.valueOf(nights));
+    }
+
+    /**
+     * @return {@link #getTotalRoomCost} + {@link #getChargeableLateCheckoutFee}
+     */
+    public BigDecimal getTotalRoomCostWithLateCheckoutFee() {
+        return getTotalRoomCost().add(getChargeableLateCheckoutFee());
+    }
 //
 //    /**
 //     * Total general extras cost based on total nights stay.
@@ -285,15 +282,17 @@ public class Reservation {
 //        return Objects.hash(reservationId);
 //    }
 //
-//    @Override
-//    public String toString() {
-//        return "Reservation{" +
-//                "reservationId=" + reservationId +
-//                '}';
-//    }
+
+    @Override
+    public String toString() {
+        return "Reservation{" +
+                "room=" + room +
+                '}';
+    }
+
 
 //    /**
-//     * Extracted for reuse in ajax reservationDates validation.
+//     * Extracted for reuse in ajax dates validation.
 //     *
 //     * @return Pair with key = field, value = error message or null if date span is valid.
 //     */

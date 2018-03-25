@@ -9,47 +9,128 @@
     <title>Select dates</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <div class="ui form">
-        <div class="two fields">
-            <div class="field required">
-                <label for="checkInDate">Check in date</label>
-                <input id="checkInDate" type="text"/>
-                <input type="hidden" id="altCheckInDatePicker">
-            </div>
-            <div class="field required">
-                <label for="checkOutDate">Check out date</label>
-                <input id="checkOutDate" type="text"/>
-            </div>
-        </div>
-        <div class="required field">
-            <label for="estimatedCheckInTime">Estimated check in time</label>
+<div layout:fragment="content" th:with="dateFormatLong=#{date.format.long},timeFormatShort=#{time.format.short}">
+    <div th:replace="~{reservation/fragments :: reservationFlowSteps(${reservationFlow})}"></div>
 
-            <select id="estimatedCheckInTime" class="ui fluid dropdown">
-                <option value="">Gender</option>
-                <option value="1">Male</option>
-                <option value="0">Female</option>
-            </select>
-        </div>
+    <form id="form" th:action="@{/reservation/dates}" method="post" th:object="${reservationFlow.reservation.dates}">
+        <div class="ui form">
+            <div class="two fields">
+                <div class="field required"
+                     th:with="hasError=${#fields.hasErrors('checkInDate')}" th:classappend="${hasError} ? 'error'">
+                    <label for="checkInDatePicker">Check in date</label>
+                    <input id="checkInDatePicker" type="text"
+                           th:value="${#temporals.format(reservationFlow.reservation.dates.checkInDate, dateFormatLong)}"/>
+                    <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{checkInDate}"></div>
+                    <input type="hidden" id="altCheckInDatePicker" th:field="*{checkInDate}">
+                </div>
+                <div class="field required"
+                     th:with="hasError=${#fields.hasErrors('checkOutDate')}" th:classappend="${hasError} ? 'error'">
+                    <label for="checkOutDatePicker">Check out date</label>
+                    <input id="checkOutDatePicker" type="text"
+                           th:value="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}"/>
+                    <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{checkOutDate}"></div>
+                    <input type="hidden" id="altCheckOutDatePicker" th:field="*{checkOutDate}">
+                </div>
+            </div>
+            <div class="field required">
+                <label for="estimatedCheckInTime">Estimated check in time</label>
 
-        <div class="required inline field">
-            <div class="ui checkbox">
-                <input type="checkbox">
-                <label>I agree to the Terms and Conditions</label>
+                <select id="estimatedCheckInTime" class="ui fluid dropdown" th:field="*{estimatedCheckInTime}">
+                    <option th:each="time,stat : ${reservationFlow.reservation.room.hotel.allowableCheckInTimes()}"
+                            th:value="${time}" th:text="${#temporals.format(time, timeFormatShort)}"></option>
+                </select>
+            </div>
+
+
+            <div class="ui segment">
+                <h5>Reservation policy</h5>
+
+                <p>By acknowledging our check in and check out policies, you understand the following</p>
+                <ul>
+                    <li th:text="|Please check in between
+                        ${#temporals.format(reservationFlow.reservation.room.hotel.earliestCheckInTime, timeFormatShort)} and
+                        ${#temporals.format(reservationFlow.reservation.room.hotel.latestCheckInTime, timeFormatShort)}|"></li>
+
+                    <li th:text="|Standard check out time is by ${#temporals.format(reservationFlow.reservation.room.hotel.standardCheckOutTime, timeFormatShort)}
+                        (Select late check out option to extend this time)|"></li>
+                </ul>
+
+                <div class="required field"
+                     th:with="hasError=${#fields.hasErrors('policyAcknowledged')}" th:classappend="${hasError} ? 'error'">
+                    <div class="ui checkbox" th:classappend="${hasError} ? 'margin-right-10'">
+                        <input type="checkbox" th:field="*{policyAcknowledged}">
+                        <label>I understand</label>
+                    </div>
+                    <div class="ui left pointing red basic label" th:if="${hasError}" th:errors="*{policyAcknowledged}"></div>
+                </div>
+
+                <div class="field">
+                    <div class="ui checkbox">
+                        <div class="flex-row-flow">
+                            <input type="checkbox" th:field="*{lateCheckout}" id="lateCheckout">
+                            <label class="margin-right-10" th:text="|Yes, I want to checkout by no later than
+                            ${#temporals.format(reservationFlow.reservation.room.hotel.latestCheckOutTime, timeFormatShort)}|"></label>
+
+                            <div class="ui blue basic label" th:if="${noLateFee}">Free</div>
+                            <div class="ui blue basic label" th:unless="${noLateFee}"
+                                 th:text="|$${#numbers.formatDecimal(reservationFlow.reservation.room.hotel.lateCheckoutFee, 1, 2)}|"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field" th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
+
+            <div class="field">
+                <div th:insert="~{reservation/fragments :: roomCosts}"></div>
+            </div>
+
+            <div class="field">
+                <button class="ui button" type="submit">Next</button>
             </div>
         </div>
-    </div>
+    </form>
+
+
 </div>
 <th:block layout:fragment="script">
     <script>
-        $('.ui.dropdown').dropdown();
-
         const dateFormat = "dd/mm/yy";
 
-        // Need to use hidden fields to transform date into correct format for server to parse in POST.
+        // Hidden fields are used for each date picker to transform date into the format the server is expecting.
         const altFormat = "yy-mm-dd";
 
+        function getDate(element) {
+            var date;
+            try {
+                date = $.datepicker.parseDate(dateFormat, element.value);
+            } catch (error) {
+                date = null;
+            }
+            return date;
+        }
+
+        function updatePrice() {
+            // Remove any previous validation errors as a result of posting to server.
+            $("#globalValidationErrors").remove();
+
+            const url = '/reservation/dates?prices';
+            const data = $("#form").serialize();
+
+            $.post(url, data, function (result) {
+                console.log(result);
+                $("#roomCostWrapper").replaceWith(result);
+            }).fail(function () {
+                $("#roomCostWrapper").toggleClass("hidden");
+                showErrorModal('Unable to update room prices due to server error');
+            });
+
+        }
+
         $(document).ready(function () {
+            registerOnSubmitHandler("form");
+
+            $('.ui.dropdown').dropdown();
 
             const checkInDatePicker = $("#checkInDatePicker")
                 .datepicker({
@@ -58,6 +139,7 @@
                     altField: "#altCheckInDatePicker",
                     minDate: 0
                 }).on("change", function () {
+                    // check out date must start from check in date.
                     checkOutDatePicker.datepicker("option", "minDate", getDate(this))
                 });
 
@@ -70,22 +152,8 @@
                 })
                 .on("change", updatePrice);
 
-
-            function getDate(element) {
-                var date;
-                try {
-                    date = $.datepicker.parseDate(dateFormat, element.value);
-                } catch (error) {
-                    date = null;
-                }
-                return date;
-            }
-
-            $("#lateCheckout").change(function () {
-                updatePrice();
-            })
+            $("#lateCheckout").change(updatePrice);
         });
-
     </script>
 </th:block>
 

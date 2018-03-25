@@ -95,7 +95,7 @@ public class MealPlan implements Serializable {
      * @return The sum of the total meal plan costs
      */
     public BigDecimal getTotalMealPlanCost() {
-        BigDecimal totalNights = new BigDecimal(reservation.getReservationDates().totalNights());
+        BigDecimal totalNights = new BigDecimal(reservation.getDates().totalNights());
 
         return foodExtras.stream()
                 .map(extra -> applyDiscounts(extra, totalNights))

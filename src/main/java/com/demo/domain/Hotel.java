@@ -49,7 +49,7 @@ public class Hotel implements Serializable {
 
     private final static LocalTime DEFAULT_EARLIEST_CHECK_IN = LocalTime.of(7, 0);
     private final static LocalTime DEFAULT_LATEST_CHECK_IN = LocalTime.of(22, 0);
-    private final static LocalTime DEFAULT_EARLIEST_CHECKOUT = LocalTime.of(11, 0);
+    private final static LocalTime DEFAULT_STANDARD_CHECKOUT = LocalTime.of(11, 0);
     private final static LocalTime DEFAULT_LATEST_CHECKOUT = LocalTime.of(22, 0);
     private final static BigDecimal DEFAULT_LATE_CHECKOUT_FEE = BigDecimal.valueOf(15.95);
 
@@ -57,7 +57,7 @@ public class Hotel implements Serializable {
         this(name, city, stars, email,
                 DEFAULT_EARLIEST_CHECK_IN,
                 DEFAULT_LATEST_CHECK_IN,
-                DEFAULT_EARLIEST_CHECKOUT,
+                DEFAULT_STANDARD_CHECKOUT,
                 DEFAULT_LATEST_CHECKOUT,
                 DEFAULT_LATE_CHECKOUT_FEE);
     }
@@ -65,7 +65,7 @@ public class Hotel implements Serializable {
     public Hotel(String name, String city, int stars, String email,
                  LocalTime earliestCheckInTime,
                  LocalTime latestCheckInTime,
-                 LocalTime earliestCheckOutTime,
+                 LocalTime standardCheckOutTime,
                  LocalTime latestCheckOutTime,
                  BigDecimal lateCheckoutFee) {
         this.name = name;
@@ -75,7 +75,7 @@ public class Hotel implements Serializable {
         this.rooms = new HashSet<>();
         this.earliestCheckInTime = earliestCheckInTime;
         this.latestCheckInTime = latestCheckInTime;
-        this.standardCheckOutTime = earliestCheckOutTime;
+        this.standardCheckOutTime = standardCheckOutTime;
         this.latestCheckOutTime = latestCheckOutTime;
         this.lateCheckoutFee = lateCheckoutFee;
     }
@@ -184,7 +184,7 @@ public class Hotel implements Serializable {
      * Generates range of allowable check in times spanning from the earliest to latest times for this hotel.
      * <p>This provides an estimated check in time to help staff organise the room.</p>
      */
-    public List<LocalTime> allowableCheckinTimes() {
+    public List<LocalTime> allowableCheckInTimes() {
         long span = ChronoUnit.HOURS.between(earliestCheckInTime, latestCheckInTime) + 1;
 
         return Stream.iterate(earliestCheckInTime, time -> time.plusHours(1))
