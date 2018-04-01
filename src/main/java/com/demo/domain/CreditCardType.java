@@ -1,5 +1,6 @@
 package com.demo.domain;
 
+// Todo: Add surcharge ?
 public enum CreditCardType {
     MasterCard("Mastercard"),
     Visa("Visa");

@@ -80,11 +80,22 @@ public class Reservation {
     }
 
     public Set<Guest> getGuests() {
-        return guests;
+        return Collections.unmodifiableSet(guests);
     }
 
-    public void setGuests(Set<Guest> guests) {
-        this.guests = guests;
+    /**
+     * Add a guest only if the room has free beds.
+     *
+     * @param guest
+     */
+    public void addGuest(Guest guest) {
+        if (!isRoomFull()) {
+            guests.add(guest);
+        }
+    }
+
+    public void clearGuests() {
+        guests.clear();
     }
 
     public UUID getReservationId() {
@@ -95,7 +106,12 @@ public class Reservation {
         return generalExtras;
     }
 
-    public void setGeneralExtras(Set<Extra> generalExtras) {
+    public void setGeneralExtras(Set<Extra> generalExtras) throws IllegalArgumentException {
+        boolean containsInvalidCategories
+                = generalExtras.stream().anyMatch(extra -> extra.getCategory() != Extra.Category.General);
+        if (containsInvalidCategories) {
+            throw new IllegalArgumentException("Contains non general extras.");
+        }
         this.generalExtras = generalExtras;
     }
 
@@ -103,7 +119,13 @@ public class Reservation {
         return mealPlans;
     }
 
-    public void setMealPlans(Set<MealPlan> mealPlans) {
+    public void setMealPlans(Set<MealPlan> mealPlans) throws IllegalArgumentException {
+        boolean containsInvalidCategories = mealPlans.stream().flatMap(mealPlan -> mealPlan.getFoodExtras().stream())
+                .anyMatch(extra -> extra.getCategory() != Extra.Category.Food);
+
+        if (containsInvalidCategories) {
+            throw new IllegalArgumentException("Contains non food extras.");
+        }
         this.mealPlans = mealPlans;
     }
 
@@ -121,6 +143,10 @@ public class Reservation {
 
     public void setDates(ReservationDates dates) {
         this.dates = dates;
+    }
+
+    public boolean isRoomFull() {
+        return guests.size() >= room.getBeds();
     }
 
     /**
@@ -144,7 +170,6 @@ public class Reservation {
         }
     }
 
-
     /**
      * @return Total nights * per night cost
      */
@@ -162,18 +187,20 @@ public class Reservation {
     public BigDecimal getTotalRoomCostWithLateCheckoutFee() {
         return getTotalRoomCost().add(getChargeableLateCheckoutFee());
     }
-//
-//    /**
-//     * Total general extras cost based on total nights stay.
-//     */
-//    public BigDecimal getTotalGeneralExtrasCost() {
-//        long totalNights = getTotalNights();
-//        return generalExtras.stream().reduce(
-//                BigDecimal.ZERO,
-//                (acc, next) -> acc.add(next.getTotalPrice(totalNights))
-//                , BigDecimal::add
-//        );
-//    }
+
+    /**
+     * Calculates the total general extras cost.
+     * <p>
+     * {@code Daily extra cost * total nights}
+     */
+    public BigDecimal getTotalGeneralExtrasCost() {
+        long totalNights = dates.totalNights();
+        return generalExtras.stream().reduce(
+                BigDecimal.ZERO,
+                (acc, next) -> acc.add(next.getTotalPrice(totalNights))
+                , BigDecimal::add
+        );
+    }
 //
 //    /**
 //     * @return The supplied {@code Extra} price multiplied by total nights stayed.
@@ -185,31 +212,35 @@ public class Reservation {
 //        return extra.getTotalPrice(getTotalNights());
 //    }
 //
-//    /**
-//     * @return Total cost of all guests meal plans
-//     */
-//    public BigDecimal getTotalMealPlansCost() {
-//        return mealPlans.stream()
-//                .map(MealPlan::getTotalMealPlanCost)
-//                .reduce(BigDecimal.ZERO, BigDecimal::add, BigDecimal::add);
-//    }
-//
-//    /**
-//     * Total cost including everything!
-//     */
-//    public BigDecimal getTotalCostExcludingTax() {
-//        return getTotalRoomCostWithLateCheckoutFee()
-//                .add(getTotalGeneralExtrasCost())
-//                .add(getTotalMealPlansCost());
-//    }
-//
-//    public BigDecimal getTaxableAmount() {
-//        return getTotalCostExcludingTax().multiply(BigDecimal.valueOf(TAX_AMOUNT));
-//    }
-//
-//    public BigDecimal getTotalCostIncludingTax() {
-//        return getTotalCostExcludingTax().add(getTaxableAmount());
-//    }
+
+    /**
+     * @return Total cost of all guests meal plans
+     */
+    public BigDecimal getTotalMealPlansCost() {
+        return mealPlans.stream()
+                .map(MealPlan::getTotalMealPlanCost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add, BigDecimal::add);
+    }
+
+    /**
+     * Total cost including everything!
+     */
+    public BigDecimal getTotalCostExcludingTax() {
+        return getTotalRoomCostWithLateCheckoutFee()
+                .add(getTotalGeneralExtrasCost())
+                .add(getTotalMealPlansCost());
+    }
+
+    /**
+     * @return The taxable amount from the total cost. Eg 10% of $100 = $10.
+     */
+    public BigDecimal getTaxableAmount() {
+        return getTotalCostExcludingTax().multiply(BigDecimal.valueOf(TAX_AMOUNT));
+    }
+
+    public BigDecimal getTotalCostIncludingTax() {
+        return getTotalCostExcludingTax().add(getTaxableAmount());
+    }
 //
 //    /**
 //     * Useful for UI template rendering.

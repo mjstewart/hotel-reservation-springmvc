@@ -1,13 +1,12 @@
 package com.demo.reservation;
 
 import com.demo.TimeProvider;
-import com.demo.domain.Hotel;
-import com.demo.domain.ReservationDates;
-import com.demo.domain.Room;
-import com.demo.domain.RoomType;
+import com.demo.domain.*;
 import com.demo.persistance.RoomRepository;
 import com.demo.reservation.flow.ReservationController;
+import com.demo.reservation.flow.forms.DateFormParams;
 import com.demo.reservation.flow.forms.ReservationFlow;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,15 +16,16 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.util.LinkedMultiValueMap;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Optional;
 
+import static com.demo.GlobalErrorMatchers.globalErrorMatchers;
+import static com.demo.reservation.flow.forms.FlowMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -52,88 +52,50 @@ public class ReservationControllerTest {
         return room;
     }
 
-    private ReservationFlow createReservationFlow() {
+    /**
+     * Contains a valid Reservation expected in the Guest flow step.
+     *
+     * <p>ReservationDates is empty ready to bind to the new ReservationDates form.</p>
+     */
+    private ReservationFlow toDateFlow() {
         ReservationFlow reservationFlow = new ReservationFlow();
         reservationFlow.getReservation().setRoom(createRoom());
+        reservationFlow.setActive(ReservationFlow.Step.Dates);
         return reservationFlow;
     }
 
     /**
-     * Creates form params to simulate POST.
-     * <p>
-     * <p>{@code reservation.dates.checkInDate} is the path spring uses to bind request param to model. For example,
-     * {@code ReservationController.dates} has the {@code ModelAttribute} of {@code ReservationFlow} which will contain
-     * the form body.</p>
-     * <p>
-     * <p>Using {@code ReservationFlow} as the root object containing the form fields, spring will use reflection to
-     * instantiate a {@code ReservationDates} by using the navigation path of {@code reservation.dates.checkInDate} etc.</p>
+     * Creates a valid Reservation that is expected in the Guest flow step.
+     *
+     * <ul>
+     * <li>Step 1 - ReservationDates = valid</li>
+     * <li>Step 2 - Guests - empty ready to bind to the new guest form.</li>
+     * </ul>
      */
-    private LinkedMultiValueMap<String, String> toParams(ReservationDates dates) {
-        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.put("reservation.dates.checkInDate", List.of(dates.getCheckInDate().format(DateTimeFormatter.ISO_DATE)));
-        params.put("reservation.dates.checkOutDate", List.of(dates.getCheckOutDate().format(DateTimeFormatter.ISO_DATE)));
-        params.put("reservation.dates.estimatedCheckInTime", List.of(dates.getEstimatedCheckInTime().format(DateTimeFormatter.ISO_TIME)));
-        params.put("reservation.dates.lateCheckout", List.of(dates.isLateCheckout() + ""));
-        params.put("reservation.dates.policyAcknowledged", List.of(dates.isPolicyAcknowledged() + ""));
-        return params;
+    private ReservationFlow toGuestFlow() {
+        ReservationFlow reservationFlow = new ReservationFlow();
+        reservationFlow.getReservation().setRoom(createRoom());
+
+        reservationFlow.completeStep(ReservationFlow.Step.Dates);
+        reservationFlow.setActive(ReservationFlow.Step.Guests);
+
+        LocalDate checkIn = LocalDate.now();
+        LocalDate checkOut = checkIn.plusDays(5);
+        ReservationDates reservationDates = new ReservationDates(
+                checkIn, checkOut, LocalTime.of(11, 0), false, true
+        );
+        reservationFlow.getReservation().setDates(reservationDates);
+        return reservationFlow;
     }
+
 
     private LinkedMultiValueMap<String, String> emptyParams() {
         return new LinkedMultiValueMap<>();
     }
 
-    /**
-     * Checkout date is before the check in
-     */
-    private LinkedMultiValueMap<String, String> checkOutOccursBeforeCheckInParams(TimeProvider timeProvider) {
-        LocalDate checkIn = timeProvider.localDate();
-        LocalDate checkOut = checkIn.minusDays(1);
-        LocalTime estimatedCheckInTime = LocalTime.of(10, 0);
-        ReservationDates dates = new ReservationDates(checkIn, checkOut, estimatedCheckInTime,
-                true, true);
-        return toParams(dates);
-    }
 
-    /**
-     * Check in date is the in the past
-     */
-    private LinkedMultiValueMap<String, String> checkInNotInFutureParams(TimeProvider timeProvider) {
-        LocalDate checkIn = timeProvider.localDate().minusDays(1);
-        LocalDate checkOut = checkIn.plusDays(1);
-        LocalTime estimatedCheckInTime = LocalTime.of(10, 0);
-        ReservationDates dates = new ReservationDates(checkIn, checkOut, estimatedCheckInTime,
-                true, true);
-        return toParams(dates);
-    }
 
-    /**
-     * Total night stay is 0
-     */
-    private LinkedMultiValueMap<String, String> minimumNightsParams(TimeProvider timeProvider) {
-        LocalDate checkIn = timeProvider.localDate();
-        LocalTime estimatedCheckInTime = LocalTime.of(10, 0);
-        ReservationDates dates = new ReservationDates(checkIn, checkIn, estimatedCheckInTime,
-                true, true);
-        return toParams(dates);
-    }
 
-    private LinkedMultiValueMap<String, String> validParams(TimeProvider timeProvider) {
-        LocalDate checkIn = timeProvider.localDate();
-        LocalDate checkOut = checkIn.plusDays(1);
-        LocalTime estimatedCheckInTime = LocalTime.of(10, 0);
-        ReservationDates dates = new ReservationDates(checkIn, checkOut, estimatedCheckInTime,
-                false, true);
-        return toParams(dates);
-    }
-
-    private LinkedMultiValueMap<String, String> noPolicyAcknowledgementParams(TimeProvider timeProvider) {
-        LocalDate checkIn = timeProvider.localDate();
-        LocalDate checkOut = checkIn.plusDays(1);
-        LocalTime estimatedCheckInTime = LocalTime.of(10, 0);
-        ReservationDates dates = new ReservationDates(checkIn, checkOut, estimatedCheckInTime,
-                false, false);
-        return toParams(dates);
-    }
 
     // Flow step 1 - GET date form
 
@@ -143,7 +105,9 @@ public class ReservationControllerTest {
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(room));
 
         mockMvc.perform(get("/reservation?roomId=5"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
 
         verify(roomRepository, times(1)).findById(anyLong());
     }
@@ -198,7 +162,7 @@ public class ReservationControllerTest {
 
     @Test
     public void postDateForm_EmptyForm_ExpectedBeanValidationErrors() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+        ReservationFlow reservationFlow = toDateFlow();
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
 
         mockMvc.perform(post("/reservation/dates")
@@ -210,92 +174,282 @@ public class ReservationControllerTest {
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates.checkOutDate", "NotNull"))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates.estimatedCheckInTime", "NotNull"))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates.policyAcknowledged", "AssertTrue"))
-                .andExpect(model().attribute("reservationFlow", Matchers.hasProperty("step", Matchers.is(0))));
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
     }
 
     @Test
     public void postDateForm_GlobalValidation_CheckIn_NotInPast() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+        ReservationFlow reservationFlow = toDateFlow();
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
         mockMvc.perform(post("/reservation/dates")
                 .sessionAttr("reservationFlow", reservationFlow)
-                .params(checkInNotInFutureParams(timeProvider)))
+                .params(DateFormParams.checkInNotInFutureParams(timeProvider)))
                 .andExpect(view().name("reservation/dates"))
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates", "checkInDate.future"))
-                .andExpect(model().attribute("reservationFlow", Matchers.hasProperty("step", Matchers.is(0))));
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
     }
 
     @Test
     public void postDateForm_GlobalValidation_Checkout_OccursAfterCheckIn() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+        ReservationFlow reservationFlow = toDateFlow();
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
         mockMvc.perform(post("/reservation/dates")
                 .sessionAttr("reservationFlow", reservationFlow)
-                .params(checkOutOccursBeforeCheckInParams(timeProvider)))
+                .params(DateFormParams.checkOutOccursBeforeCheckInParams(timeProvider)))
                 .andExpect(view().name("reservation/dates"))
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates", "checkOutDate.afterCheckIn"))
-                .andExpect(model().attribute("reservationFlow", Matchers.hasProperty("step", Matchers.is(0))));
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
     }
 
     @Test
     public void postDateForm_GlobalValidation_SatisfiesMinimumNightStay() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+        ReservationFlow reservationFlow = toDateFlow();
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
         mockMvc.perform(post("/reservation/dates")
                 .sessionAttr("reservationFlow", reservationFlow)
-                .params(minimumNightsParams(timeProvider)))
+                .params(DateFormParams.minimumNightsParams(timeProvider)))
                 .andExpect(view().name("reservation/dates"))
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates", "checkOutDate.minNights"))
-                .andExpect(model().attribute("reservationFlow", Matchers.hasProperty("step", Matchers.is(0))));
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
     }
 
     @Test
     public void postDateForm_Valid_RedirectToNextView() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+        ReservationFlow reservationFlow = toDateFlow();
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
         mockMvc.perform(post("/reservation/dates")
                 .sessionAttr("reservationFlow", reservationFlow)
-                .params(validParams(timeProvider)))
+                .params(DateFormParams.validParams(timeProvider)))
                 .andExpect(view().name("redirect:/reservation/guests"))
-                .andExpect(flash().attribute("reservationFlow",
-                        Matchers.hasProperty("step", Matchers.is(0))));
+                .andExpect(flash().attributeExists("reservationFlow"))
+                .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Dates));
     }
 
-    // Flow step 1 - Ajax dynamic room price fragment
+    // Ajax dynamic room price fragment
 
     @Test
     public void roomCostFragment_ReturnsCorrectFragment() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+        ReservationFlow reservationFlow = toDateFlow();
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
         mockMvc.perform(post("/reservation/dates?prices")
                 .sessionAttr("reservationFlow", reservationFlow)
-                .params(validParams(timeProvider)))
+                .params(DateFormParams.validParams(timeProvider)))
                 .andExpect(view().name("reservation/fragments :: roomCosts"));
     }
 
     // Flow step 2 - guests
 
     @Test
-    public void getGuestForm_CorrectViewAndFlowStep() throws Exception {
-        ReservationFlow reservationFlow = createReservationFlow();
+    public void getGuestForm_HasValidStartingState() throws Exception {
+        ReservationFlow reservationFlow = toDateFlow();
 
         mockMvc.perform(get("/reservation/guests")
                 .sessionAttr("reservationFlow", reservationFlow))
                 .andExpect(view().name("reservation/guests"))
-                .andExpect(model().attribute("reservationFlow",
-                        Matchers.hasProperty("step", Matchers.is(1))));
+                .andExpect(model().attribute("guest", Matchers.is(new Guest())))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+    }
+
+    @Test
+    public void postGuestForm_GoBackToDateView_ReturnsCorrectViewAndFlowStep() throws Exception {
+        ReservationFlow reservationFlow = toDateFlow();
+
+        mockMvc.perform(post("/reservation/guests")
+                .param("back", "")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("redirect:/reservation/dates"))
+                .andExpect(flash().attributeExists("reservationFlow"))
+                .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(flashHasIncompleteFlowStep(ReservationFlow.Step.Dates));
+    }
+
+    @Test
+    public void postAddGuest_BeanValidationError_NullFields() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+
+        ResultMatcher didNotAddGuest = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests", Matchers.hasSize(0))));
+
+        // The binding stage will end up creating a new Guest but there will be nothing in it.
+        ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(new Guest()));
+
+        mockMvc.perform(post("/reservation/guests")
+                .param("addGuest", "")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(model().errorCount(2))
+                .andExpect(model().attributeHasFieldErrorCode("guest", "firstName", "NotNull"))
+                .andExpect(model().attributeHasFieldErrorCode("guest", "lastName", "NotNull"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(didNotAddGuest)
+                .andExpect(didNotCreateNewGuestObject);
+    }
+
+    @Test
+    public void postAddGuest_BeanValidationError_EmptyFields() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+
+        ResultMatcher didNotAddGuest = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests", Matchers.hasSize(0))));
+
+        Guest formGuest = new Guest("", "", false);
+        ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(formGuest));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow)
+                .param("addGuest", "")
+                .param("firstName", formGuest.getFirstName())
+                .param("lastName", formGuest.getLastName())
+                .param("child", formGuest.isChild() + ""))
+                .andExpect(model().errorCount(2))
+                .andExpect(model().attributeHasFieldErrorCode("guest", "firstName", "Size"))
+                .andExpect(model().attributeHasFieldErrorCode("guest", "lastName", "Size"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(didNotAddGuest)
+                .andExpect(didNotCreateNewGuestObject);
+    }
+
+    @Test
+    public void postAddGuest_GuestExists_HasGlobalError() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+
+        // case should be irrelevant in detecting duplicates
+        reservationFlow.getReservation().addGuest(new Guest("JoHn", "sMITh", false));
+
+        ResultMatcher didNotAddGuest = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests", Matchers.hasSize(1))));
+
+        Guest formGuest = new Guest("john", "smith", false);
+        ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(formGuest));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow)
+                .param("addGuest", "")
+                .param("firstName", formGuest.getFirstName())
+                .param("lastName", formGuest.getLastName())
+                .param("child", formGuest.isChild() + ""))
+                .andExpect(model().errorCount(1))
+                .andExpect(globalErrorMatchers().hasGlobalErrorCode("guest", "exists"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(didNotAddGuest)
+                .andExpect(didNotCreateNewGuestObject);
+    }
+
+    @Test
+    public void postAddGuest_GuestLimitExceeded_HasGlobalError() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+
+        // next guest added should be denied.
+        reservationFlow.getReservation().getRoom().setBeds(1);
+        reservationFlow.getReservation().addGuest(new Guest("john", "smith", false));
+
+        ResultMatcher didNotAddGuest = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests", Matchers.hasSize(1))));
+
+        Guest formGuest = new Guest("marie", "clarke", false);
+        ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(formGuest));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow)
+                .param("addGuest", "")
+                .param("firstName", formGuest.getFirstName())
+                .param("lastName", formGuest.getLastName())
+                .param("child", formGuest.isChild() + ""))
+                .andExpect(model().errorCount(1))
+                .andExpect(globalErrorMatchers().hasGlobalErrorCode("guest", "guestLimitExceeded"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(didNotAddGuest)
+                .andExpect(didNotCreateNewGuestObject);
+    }
+
+    /**
+     * Asserts that a valid guest is added to the guest set and a new {@code Guest} is added to the model so
+     * the UI form binds to a fresh object.
+     */
+    @Test
+    public void postAddGuest_Valid() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+
+        reservationFlow.getReservation().getRoom().setBeds(1);
+
+        Matcher<Object> reservationContainsGuest = Matchers.hasProperty("reservation",
+                Matchers.hasProperty("guests",
+                        Matchers.containsInAnyOrder(new Guest("marie", "clarke", false))));
+
+        // expect to create a new guest object to bind to the new form.
+        ResultMatcher didCreateNewGuestObject = model().attribute("guest", Matchers.is(new Guest()));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow)
+                .param("addGuest", "")
+                .param("firstName", "marie")
+                .param("lastName", "clarke")
+                .param("child", "false"))
+                .andExpect(view().name("reservation/guests"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(didCreateNewGuestObject)
+                .andExpect(model().attribute("reservationFlow", reservationContainsGuest))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+    }
+
+    /**
+     * Transition from Guest form to Extras form and perform final guest checks.
+     *
+     * <p>Since the addGuest handler validates guest adding logic, this prevents most invalid states. Transitioning
+     * only requires checking if at least 1 guest exists.
+     */
+    @Test
+    public void postGuestToExtras_NoGuestExists_ExpectGlobalError() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+        reservationFlow.getReservation().clearGuests();
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("reservation/guests"))
+                .andExpect(model().errorCount(1))
+                .andExpect(globalErrorMatchers().hasGlobalErrorCode("guest", "guests.noneExist"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+    }
+
+    @Test
+    public void postGuestToExtras_Valid() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+        reservationFlow.getReservation().getRoom().setBeds(3);
+        reservationFlow.getReservation().addGuest(new Guest("john", "smith", false));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("redirect:/reservation/extras"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Guests));
     }
 }
 

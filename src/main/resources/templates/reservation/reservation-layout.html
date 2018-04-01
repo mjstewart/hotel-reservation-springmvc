@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${reservationFlow.getActiveStepDescription().getFlowStepWithTitle()}"></title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div th:replace="~{reservation/fragments :: reservationFlowSteps(${reservationFlow})}"></div>
+
+    <div class="ui grid">
+        <div class="row computer only">
+            <div class="twelve wide column" layout:fragment="main"></div>
+            <div class="four wide column">
+                <!--would be better to be a detailed summary with checkin-checkout-->
+                <div th:insert="~{reservation/fragments :: quickSummary}"></div>
+            </div>
+        </div>
+        <div class="row tablet mobile only">
+            <div class="column" layout:fragment="main"></div>
+        </div>
+        <div class="row tablet mobile only">
+            <div class="column" th:insert="~{reservation/fragments :: quickSummary}"></div>
+        </div>
+
+        <div class="row">
+            <div class="column" layout:fragment="lower"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

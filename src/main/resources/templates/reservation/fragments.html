@@ -4,28 +4,28 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <body>
 
-<th:block th:fragment="globalErrors(errors)">
-    <div th:unless="${errors.isEmpty()}" class="ui negative message" id="globalValidationErrors"
-         th:with="hasManyErrors=${errors.size() > 1}">
-        <div class="header">
-            There were some errors with your submission
-        </div>
-
-        <ul class="list" th:if="${hasManyErrors}">
-            <li th:each="err : ${errors}" th:text="${err}"></li>
-        </ul>
-
-        <th:block th:unless="${hasManyErrors}" th:text="${errors.get(0)}">
-        </th:block>
+<div th:fragment="globalErrors(errors)" th:unless="${errors.isEmpty()}" class="ui negative message"
+     id="globalValidationErrors"
+     th:with="hasManyErrors=${errors.size() > 1}">
+    <div class="header">
+        There were some errors with your submission
     </div>
-</th:block>
 
-<div th:fragment="reservationFlowSteps(reservationFlow)" class="ui fluid mini steps">
+    <ul class="list" th:if="${hasManyErrors}">
+        <li th:each="err : ${errors}" th:text="${err}"></li>
+    </ul>
+
+    <th:block th:unless="${hasManyErrors}" th:text="${errors.get(0)}">
+    </th:block>
+</div>
+
+<div th:fragment="reservationFlowSteps(reservationFlow)" class="ui fluid ordered mini steps margin-bottom-40">
     <div class="step" th:each="stepDescription,stat : ${reservationFlow.stepDescriptions}"
-         th:with="isActive=${stat.index == reservationFlow.step},isCompleted=${stat.index lt reservationFlow.step}"
+         th:with="step=${T(com.demo.reservation.flow.forms.ReservationFlow.Step).from(stat.index)},
+         isActive=${reservationFlow.isActive(step)},isCompleted=${reservationFlow.isCompleted(stat.index)}"
          th:classappend="${isActive} ? 'active' : (${isCompleted} ? 'completed')">
         <div class="content">
-            <div class="title" th:text="|${stat.index + 1}. ${stepDescription.title}|"></div>
+            <div class="title" th:text="${stepDescription.title}"></div>
         </div>
     </div>
 </div>
@@ -38,77 +38,89 @@
         Unable to calculate room costs, please ensure all fields are valid
     </div>
 
-    <div class="table-overflow">
-        <table class="ui celled table" th:unless="${hasErrors}">
-            <thead>
-            <tr>
-                <th># Nights</th>
-                <th>Per night</th>
-                <th th:if="${reservationFlow.reservation.dates.lateCheckout}">Late check out fee</th>
-                <th>Total (excl GST)</th>
-            </tr>
-            </thead>
+    <table class="ui celled table" th:unless="${hasErrors}">
+        <thead>
+        <tr>
+            <th># Nights</th>
+            <th>Per night</th>
+            <th th:if="${reservationFlow.reservation.dates.lateCheckout}">Late check out fee</th>
+            <th>Total (excl GST)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td th:text="${reservationFlow.reservation.dates.totalNights()}"></td>
+            <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></td>
+
+            <td th:if="${reservationFlow.reservation.dates.lateCheckout}"
+                th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.hotel.lateCheckoutFee)}"></td>
+
+            <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCostWithLateCheckoutFee())}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<div th:fragment="quickSummary" id="quickSummary" th:with="dateFormatLong=#{date.format.long}">
+    <div class="ui segment">
+        <h3 class="ui dividing header">Summary</h3>
+
+        <div>
+            <h4 th:text="${reservationFlow.reservation.room.hotel.name}"></h4>
+
+            <div id="quickSummaryDates">
+                <p class="bold">Check in:</p>
+                <p th:text="${#temporals.format(reservationFlow.reservation.dates.checkInDate, dateFormatLong)}"></p>
+
+                <p class="bold">Check out:</p>
+                <p th:text="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}"></p>
+            </div>
+
+            <div class="ui divider"></div>
+
+            <table class="reservation-summary-table">
+                <tbody>
+                <tr>
+                    <td class="bold">Room type</td>
+                    <td th:text="${reservationFlow.reservation.room.roomType}"></td>
+                </tr>
+                <tr>
+                    <td class="bold"># Nights</td>
+                    <td th:text="${reservationFlow.reservation.dates.totalNights()}"></td>
+                </tr>
+                <tr>
+                    <td class="bold"># Guests</td>
+                    <td th:text="${reservationFlow.reservation.guests.size()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ui divider"></div>
+
+        <table class="reservation-summary-table">
             <tbody>
             <tr>
-                <td th:text="${reservationFlow.reservation.dates.totalNights()}"></td>
-                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></td>
-
-                <td th:if="${reservationFlow.reservation.dates.lateCheckout}"
-                    th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.hotel.lateCheckoutFee)}"></td>
-
-                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCostWithLateCheckoutFee())}"></td>
+                <td class="bold">Total</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostExcludingTax())}"></td>
+            </tr>
+            <tr class="underline-table-row">
+                <td class="bold">GST</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTaxableAmount())}"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <h3 th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostIncludingTax())}"></h3>
+                </td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
+</div>
 
-
-<!--&lt;!&ndash;use a different id so ajax post can route to mobile fragment &ndash;&gt;-->
-<!--<div th:fragment="roomCostsMobile" id="roomCostWrapperMobile"-->
-     <!--th:with="hasErrors=${reservationFlow.reservation.dates.totalNights() < 0}">-->
-
-    <!--<div class="ui negative message" th:if="${hasErrors}">-->
-        <!--Unable to calculate room costs, please ensure all fields are valid-->
-    <!--</div>-->
-
-    <!--<div class="ui segment" th:unless="${hasErrors}">-->
-        <!--<div class="ui grid">-->
-            <!--<div class="row">-->
-                <!--<div class="eight wide column">-->
-                    <!--<p class="bold"># Nights</p>-->
-                <!--</div>-->
-                <!--<div class="eight wide column">-->
-                    <!--<p th:text="${reservationFlow.reservation.dates.totalNights()}"></p>-->
-                <!--</div>-->
-            <!--</div>-->
-            <!--<div class="row">-->
-                <!--<div class="eight wide column">-->
-                    <!--<p class="bold">Per night</p>-->
-                <!--</div>-->
-                <!--<div class="eight wide column">-->
-                    <!--<p th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></p>-->
-                <!--</div>-->
-            <!--</div>-->
-            <!--<div class="row" th:if="${reservationFlow.reservation.dates.lateCheckout}">-->
-                <!--<div class="eight wide column">-->
-                    <!--<p class="bold">Late check out fee</p>-->
-                <!--</div>-->
-                <!--<div class="eight wide column">-->
-                    <!--<p th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.hotel.lateCheckoutFee)}"></p>-->
-                <!--</div>-->
-            <!--</div>-->
-            <!--<div class="row">-->
-                <!--<div class="eight wide column">-->
-                    <!--<p class="bold">Total (excl GST)</p>-->
-                <!--</div>-->
-                <!--<div class="eight wide column">-->
-                    <!--<p th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCostWithLateCheckoutFee())}"></p>-->
-                <!--</div>-->
-            <!--</div>-->
-        <!--</div>-->
-    <!--</div>-->
-<!--</div>-->
 
 </div>
 </body>

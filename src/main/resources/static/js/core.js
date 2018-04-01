@@ -1,3 +1,5 @@
+var MAX_SERVER_RESPONSE_TIME_MS = 500;
+
 function toggleDimmer() {
     $('#dimmer').toggleClass('active');
 }

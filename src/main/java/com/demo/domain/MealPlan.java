@@ -87,19 +87,19 @@ public class MealPlan implements Serializable {
     }
 
     /**
-     * Sum result of multiplying each food extra by total nights while applying any child discounts.
-     *
-     * <p>The discount must be applied AFTER multiplying the individual extras price by total nights, not
-     * to the final aggregated sum.</p>
-     *
-     * @return The sum of the total meal plan costs
+     * @return The sum result of multiplying each food extra by total nights while applying
+     * any child discounts to the total sum.
      */
     public BigDecimal getTotalMealPlanCost() {
-        BigDecimal totalNights = new BigDecimal(reservation.getDates().totalNights());
-
-        return foodExtras.stream()
-                .map(extra -> applyDiscounts(extra, totalNights))
+        BigDecimal total = foodExtras.stream()
+                .map(extra -> extra.getTotalPrice(reservation.getDates().totalNights()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add, BigDecimal::add);
+
+        if (guest.isChild()) {
+            BigDecimal discount = total.multiply(BigDecimal.valueOf(Reservation.CHILD_DISCOUNT_PERCENT));
+            return total.subtract(discount);
+        }
+        return total;
     }
 
     public boolean hasFoodExtras() {
@@ -108,22 +108,6 @@ public class MealPlan implements Serializable {
 
     public boolean hasDietRequirements() {
         return !dietaryRequirements.isEmpty();
-    }
-
-
-    /**
-     * The total value of the {@code Extra}s per night cost multiplied by total nights.
-     *
-     * Business rule - Children receive FoodExtras.CHILD_DISCOUNT_PERCENT off EACH meal.
-     */
-    public BigDecimal applyDiscounts(Extra extra, BigDecimal totalNights) {
-        BigDecimal total = extra.getPerNightPrice().multiply(totalNights);
-        if (guest.isChild()) {
-            BigDecimal discount = total.multiply(BigDecimal.valueOf(Reservation.CHILD_DISCOUNT_PERCENT));
-            return total.subtract(discount);
-        }
-
-        return total;
     }
 
     public String toFoodExtraCsv() {

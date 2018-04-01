@@ -2,18 +2,13 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
-<head>
-    <meta charset="UTF-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>Select dates</title>
-</head>
 <body>
 <div layout:fragment="content" th:with="dateFormatLong=#{date.format.long},timeFormatShort=#{time.format.short}">
     <div th:replace="~{reservation/fragments :: reservationFlowSteps(${reservationFlow})}"></div>
 
     <form id="form" th:action="@{/reservation/dates}" method="post" th:object="${reservationFlow.reservation.dates}">
         <div class="ui form">
+            <h3 class="ui dividing header" th:text="${reservationFlow.getActiveStepDescription().getDescription()}"></h3>
             <div class="two fields">
                 <div class="field required"
                      th:with="hasError=${#fields.hasErrors('checkInDate')}" th:classappend="${hasError} ? 'error'">
@@ -40,7 +35,6 @@
                             th:value="${time}" th:text="${#temporals.format(time, timeFormatShort)}"></option>
                 </select>
             </div>
-
 
             <div class="ui segment">
                 <h5>Reservation policy</h5>
@@ -82,6 +76,7 @@
             <div class="field" th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
 
             <div class="field">
+                <i id="spinner" class="fas fa-spinner fa-spin hide"></i>
                 <div th:insert="~{reservation/fragments :: roomCosts}"></div>
             </div>
 
@@ -117,14 +112,26 @@
             const url = '/reservation/dates?prices';
             const data = $("#form").serialize();
 
+            var serverReplied = false;
+            var timeoutTriggered = false;
+
             $.post(url, data, function (result) {
-                console.log(result);
+                serverReplied = true;
+                if (timeoutTriggered) {
+                    $("#spinner").addClass("hide");
+                }
                 $("#roomCostWrapper").replaceWith(result);
             }).fail(function () {
-                $("#roomCostWrapper").toggleClass("hidden");
                 showErrorModal('Unable to update room prices due to server error');
             });
 
+            // Only show loading spinner if server is slow to respond to avoid ui flash.
+            setTimeout(function () {
+                if (!serverReplied) {
+                    timeoutTriggered = true;
+                    $("#spinner").removeClass("hide");
+                }
+            }, MAX_SERVER_RESPONSE_TIME_MS);
         }
 
         $(document).ready(function () {

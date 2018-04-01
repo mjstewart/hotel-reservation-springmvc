@@ -1,11 +1,34 @@
+html, body {
+    height: 100%;
+}
+
 .flex-row-flow {
     display: flex;
     flex-direction: row;
     align-items: baseline;
 }
 
+.flex-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
 .bold {
     font-weight: bold;
+}
+
+.margin-top-10 {
+    margin-top: 10px !important;
+}
+
+.margin-top-20 {
+    margin-top: 20px !important;
+}
+
+.margin-top-30 {
+    margin-top: 30px !important;
 }
 
 .margin-right-10 {
@@ -14,4 +37,53 @@
 
 .margin-left-10 {
     margin-left: 10px !important;
+}
+
+.margin-bottom-40 {
+    margin-bottom: 40px !important;
+}
+
+.dim {
+    opacity: 0.4 !important;
+}
+
+.inline {
+    display: inline !important;
+}
+
+.hide {
+    display: none !important;
+}
+
+.icon-large {
+    font-size: 1.7em !important;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+}
+
+.reservation-summary-table tr td:first-child {
+    padding-right: 20px !important;
+}
+
+#quickSummary table td {
+    padding: 2px 0 2px 0;
+}
+
+.underline-table-row {
+    border-bottom: 1px solid rgba(34,36,38,.15) !important;
+}
+
+#quickSummaryDates p {
+    margin: 2px 0 2px 0 !important;
+}
+
+.main__content-group {
+    margin-bottom: 50px !important;
+}
+
+.main__content-group:last-child {
+    margin-bottom: 0 !important;
 }

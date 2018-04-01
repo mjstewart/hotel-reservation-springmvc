@@ -103,14 +103,20 @@ public class ReservationDates {
 
     public Optional<ValidationError> validate(LocalDate now) {
         if (checkInDate == null) {
+//            return Optional.of(new ValidationError("reservationDates.checkInDate.missing", "Missing check in date"));
             return Optional.of(new ValidationError("checkInDate.missing", "Missing check in date"));
         } else if (checkOutDate == null) {
             return Optional.of(new ValidationError("checkOutDate.missing", "Missing check out date"));
+//            return Optional.of(new ValidationError("reservationDates.checkOutDate.missing", "Missing check out date"));
         } else if (checkInDate.isBefore(now)) {
+//            return Optional.of(new ValidationError("reservationDates.checkInDate.future", "Check in date must be in the future"));
             return Optional.of(new ValidationError("checkInDate.future", "Check in date must be in the future"));
         } else if (checkOutDate.isBefore(checkInDate)) {
+//            return Optional.of(new ValidationError("reservationDates.checkOutDate.afterCheckIn", "Check out date must occur after check in date"));
             return Optional.of(new ValidationError("checkOutDate.afterCheckIn", "Check out date must occur after check in date"));
         } else if (totalNights() < 1) {
+            // handles case where check in/out dates are the same.
+//            return Optional.of(new ValidationError("reservationDates.checkOutDate.minNights", "Reservation must be for at least 1 night"));
             return Optional.of(new ValidationError("checkOutDate.minNights", "Reservation must be for at least 1 night"));
         }
         return Optional.empty();
