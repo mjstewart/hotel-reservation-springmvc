@@ -36,8 +36,4 @@ public class ThymeleafExpressionParser {
         return (String) expression.execute(context);
     }
 
-    public <T> T parseSpel(Class<T> clazz, String spelExpression) {
-        SpelExpressionParser parser = new SpelExpressionParser();
-        return parser.parseExpression(spelExpression).getValue(clazz);
-    }
 }

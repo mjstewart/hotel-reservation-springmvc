@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class QueryStringExpressionFactory implements IExpressionObjectFactory {
 
-    private static final String EVALUATION_VARIABLE_NAME = "qs";
+    private static final String EVALUATION_VARIABLE_NAME = "querystring";
 
     @Override
     public Set<String> getAllExpressionObjectNames() {

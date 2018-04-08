@@ -68,15 +68,6 @@ public class QueryString {
         return originalQueryString;
     }
 
-
-    public String replaceFirst(String key, String value) {
-        List<KeyValueIndex> indices = state.get(key);
-        if (indices != null) {
-            indices.set(0, indices.get(0).updateValue(value));
-        }
-        return reconstructQueryString();
-    }
-
     public String reconstructQueryString() {
         return state.entrySet().stream()
                 .flatMap(e -> e.getValue().stream())
@@ -84,6 +75,81 @@ public class QueryString {
                 .map(keyValueIndex -> keyValueIndex.keyValue.escape(uris::escapeQueryParam))
                 .collect(Collectors.joining("&"));
     }
+
+
+    public String replaceFirst(String key, String value) {
+        List<KeyValueIndex> indices = state.get(key);
+        if (indices != null && !indices.isEmpty()) {
+            indices.set(0, indices.get(0).updateValue(value));
+        }
+        return reconstructQueryString();
+    }
+
+    /**
+     * Applies a list of {@code StateChangeInstruction}s to the existing state only if the instruction contains
+     * an existing key and a legal relative index.
+     *
+     * @param instructions Instructions for creating the new state.
+     * @return The resulting query string.
+     */
+    private String applyStateChangeInstructions(List<StateChangeInstruction> instructions) {
+        for (StateChangeInstruction instruction : instructions) {
+            List<KeyValueIndex> indices = state.get(instruction.key);
+            if (indices != null) {
+                boolean isWithinBounds = instruction.relativeIndex >= 0 && instruction.relativeIndex < indices.size();
+                if (isWithinBounds) {
+                    KeyValueIndex replacement = indices.get(instruction.relativeIndex).updateValue(instruction.newValue);
+                    indices.set(instruction.relativeIndex, replacement);
+                }
+            }
+        }
+        return reconstructQueryString();
+    }
+
+    // {sort:{0:'stars,asc', 1:'address,desc', 2: 'country,asc'}
+    public String replaceNth(Map<Object, Map<Object, Object>> stateChangeInstructions) {
+        List<StateChangeInstruction> instructions = stateChangeInstructions.entrySet().stream()
+                .flatMap(entry -> {
+                    // This will be the top level key to modify which is 'sort'
+                    String key = (String) entry.getKey();
+
+                    // Refers to the inner map containing the actual keys to update.
+                    // {0:'stars,asc', 1:'address,desc', 2: 'country,asc'}
+                    Map<Object, Object> keyValueStateChanges = entry.getValue();
+
+                    // Convert to domain object for clarity and to avoid having to cast everywhere etc.
+                    return keyValueStateChanges.entrySet().stream()
+                            .map(e2 -> new StateChangeInstruction(key, (int) e2.getKey(), (String) e2.getValue()));
+                })
+                .collect(Collectors.toList());
+
+        return applyStateChangeInstructions(instructions);
+    }
+
+    public static class StateChangeInstruction {
+        private String key;
+        private int relativeIndex;
+        private String newValue;
+
+        public StateChangeInstruction(String key, int relativeIndex, String newValue) {
+            this.key = key;
+            this.relativeIndex = relativeIndex;
+            this.newValue = newValue;
+        }
+
+        @Override
+        public String toString() {
+            return "StateChangeInstruction{" +
+                    "key='" + key + '\'' +
+                    ", relativeIndex=" + relativeIndex +
+                    ", newValue='" + newValue + '\'' +
+                    '}';
+        }
+    }
+
+
+
+
 
 
 //    public String replaceFirst(String key, String value) {

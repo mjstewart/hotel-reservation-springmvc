@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class QueryStringHelper {
 
+    // Delete this, thymeleaf already resolves before passing into our methods.
     private final ThymeleafExpressionParser parser;
     private final Uris uris;
 
@@ -17,8 +18,36 @@ public class QueryStringHelper {
         this.uris = uris;
     }
 
+    /**
+     * Given query string
+     *
+     * <pre>
+     *     "region=AU&suburb=west&postcode=494849"
+     * </pre>
+     *
+     * <p>Thymeleaf usage
+     *
+     * <pre>
+     *     th:with="newQueryString=${#querystring.replaceFirst(#request.getQueryString(), 'region', 'Australia')}
+     * </pre>
+     *
+     * <p>Result
+     *
+     * <pre>
+     *     newQueryString = "region=Australia&suburb=west&postcode=494849"
+     * </pre>
+     *
+     * @param attributeValue The resolved query string.
+     * @param key The target key to replace the value for.
+     * @param value The replacement value.
+     * @return The new query string.
+     */
     public String replaceFirst(String attributeValue, String key, String value) {
-        return QueryString.of(parser.parse(attributeValue), uris).replaceFirst(key, value);
+        return QueryString.of(attributeValue, uris).replaceFirst(key, value);
+    }
+
+    public String replaceNth(String attributeValue, Map<Object, Map<Object, Object>> stateChangeInstructions) {
+        return QueryString.of(attributeValue, uris).replaceNth(stateChangeInstructions);
     }
 
 //    public String replaceAll(String attributeValue, String key, List<String> values) {
@@ -35,6 +64,22 @@ public class QueryStringHelper {
         return "HELLO :)";
     }
 
+
+    /*
+       replaceAll - just have corresponding list indexes be applied rather than explicitly stating the indexes.
+                  - could just internally call replaceNth
+       removeAll
+       removeNth
+       AddMany
+       AddOne
+
+       // spring mvc convenience helpers.
+       incrementPage
+       decrementPage
+
+       something to toggle sort order for a key. if desc, change to asc and vice versa.
+
+     */
 
 
 //    public String incrementParamValue(String attributeValue, String param) {

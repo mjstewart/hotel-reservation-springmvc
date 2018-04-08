@@ -7,7 +7,7 @@ import org.thymeleaf.expression.IExpressionObjectFactory;
 public class QueryStringDialect extends AbstractDialect implements IExpressionObjectDialect {
 
     public QueryStringDialect() {
-        super("urlAssist");
+        super("queryStringHelper");
     }
 
     @Override
