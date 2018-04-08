@@ -1,12 +1,15 @@
 package com.demo.domain;
 
+import com.demo.domain.location.Address;
+import com.demo.domain.location.Postcode;
+import com.demo.domain.location.State;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -14,8 +17,11 @@ import static org.mockito.Mockito.*;
 public class ReservationTest {
 
     private Room createRoom() {
+        Address address = new Address("Royal Hotel", "166 Albert Road", null,
+                State.VIC, "Melbourne", new Postcode("3000"));
+
         Room room = new Room("ABC123", RoomType.Economy, 2, BigDecimal.valueOf(25.50));
-        room.setHotel(new Hotel("Hotel Royal", "Melbourne", 4, "royal@hotel.com"));
+        room.setHotel(new Hotel("Royal Hotel", address, 4, "royal@hotel.com"));
         return room;
     }
 
@@ -43,15 +49,43 @@ public class ReservationTest {
         reservation.setRoom(room);
 
         Guest john = new Guest("john", "smith", false);
-        reservation.addGuest(john);
         Guest sara = new Guest("sara", "smith", true);
+        reservation.addGuest(john);
         reservation.addGuest(sara);
 
         reservation.addGuest(new Guest("marie", "smith", false));
         reservation.addGuest(new Guest("ryan", "smith", false));
 
         assertThat(reservation.getGuests().size()).isEqualTo(2);
-        assertThat(reservation.getGuests()).containsExactly(john, sara);
+        assertThat(reservation.getGuests()).containsExactlyInAnyOrder(john, sara);
+    }
+
+    @Test
+    public void removeGuest_GuestIdDoesNotExist_HasNoEffect() {
+        Reservation reservation = new Reservation();
+        boolean removed = reservation.removeGuestById(UUID.randomUUID());
+        assertThat(removed).isFalse();
+        assertThat(reservation.getGuests()).isEmpty();
+    }
+
+    @Test
+    public void removeGuest_GuestIdExists_GuestIsRemoved() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+        room.setBeds(2);
+        reservation.setRoom(room);
+
+        Guest guestA = new Guest("john", "smith", false);
+        Guest guestB = new Guest("nicole", "smith", false);
+
+        reservation.addGuest(guestA);
+        reservation.addGuest(guestB);
+        assertThat(reservation.getGuests()).containsExactlyInAnyOrder(guestA, guestB);
+
+        boolean removed = reservation.removeGuestById(guestA.getGuestId());
+
+        assertThat(removed).isTrue();
+        assertThat(reservation.getGuests()).containsExactly(guestB);
     }
 
     @Test

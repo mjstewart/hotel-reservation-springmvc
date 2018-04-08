@@ -8,7 +8,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>hotel</name>
+	<key>hotel</key>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
@@ -89,7 +89,15 @@
 			<artifactId>font-awesome</artifactId>
 			<version>5.0.6</version>
 		</dependency>
-	</dependencies>
+
+        <!-- https://mvnrepository.com/artifact/org.webjars/lodash -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>lodash</artifactId>
+            <version>4.17.4</version>
+        </dependency>
+
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -103,7 +111,7 @@
 	<repositories>
 		<repository>
 			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
+			<key>Spring Snapshots</key>
 			<url>https://repo.spring.io/snapshot</url>
 			<snapshots>
 				<enabled>true</enabled>
@@ -111,7 +119,7 @@
 		</repository>
 		<repository>
 			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
+			<key>Spring Milestones</key>
 			<url>https://repo.spring.io/milestone</url>
 			<snapshots>
 				<enabled>false</enabled>
@@ -122,7 +130,7 @@
 	<pluginRepositories>
 		<pluginRepository>
 			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
+			<key>Spring Snapshots</key>
 			<url>https://repo.spring.io/snapshot</url>
 			<snapshots>
 				<enabled>true</enabled>
@@ -130,7 +138,7 @@
 		</pluginRepository>
 		<pluginRepository>
 			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
+			<key>Spring Milestones</key>
 			<url>https://repo.spring.io/milestone</url>
 			<snapshots>
 				<enabled>false</enabled>

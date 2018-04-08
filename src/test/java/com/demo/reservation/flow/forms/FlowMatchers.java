@@ -16,13 +16,13 @@ public class FlowMatchers {
      * Applies a mapping function on a {@code ReservationFlow} to produce a value {@code T}.
      * This value {@code T} is then fed into the {@code subMatcher} for the final assertion.
      *
-     * @param mapper The mapping function.
+     * @param mapper     The mapping function.
      * @param subMatcher Asserts the value produced by the mapping function.
-     * @param <T> The value produced by the mapping function.
+     * @param <T>        The value produced by the mapping function.
      * @return The corresponding {@code FeatureMatcher}.
      */
     private static <T> FeatureMatcher<ReservationFlow, T> flowStateAssertion(Function<ReservationFlow, T> mapper,
-                                                                      Matcher<T> subMatcher) {
+                                                                             Matcher<T> subMatcher) {
         return new FeatureMatcher<>(subMatcher, "flowStateAssertion", "flowStateAssertion") {
             @Override
             protected T featureValueOf(ReservationFlow reservationFlow) {

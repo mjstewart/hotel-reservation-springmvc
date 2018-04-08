@@ -6,9 +6,14 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 public class Guest {
+    // Pre save id to identify guest
+    @Transient
+    private UUID guestId = UUID.randomUUID();
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -32,6 +37,10 @@ public class Guest {
     }
 
     public Guest() {
+    }
+
+    public UUID getGuestId() {
+        return guestId;
     }
 
     public String getFirstName() {
@@ -73,13 +82,14 @@ public class Guest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Guest guest = (Guest) o;
-        return Objects.equals(firstName, guest.firstName) &&
+        return child == guest.child &&
+                Objects.equals(firstName, guest.firstName) &&
                 Objects.equals(lastName, guest.lastName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(firstName, lastName);
+        return Objects.hash(firstName, lastName, child);
     }
 
     @Override

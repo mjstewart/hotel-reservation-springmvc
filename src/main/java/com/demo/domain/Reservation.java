@@ -79,6 +79,11 @@ public class Reservation {
         this.room = room;
     }
 
+    /**
+     * Use the utility functions add/remove guest to perform changes.
+     *
+     * @return The unmodifiable set of {@code Guest}s.
+     */
     public Set<Guest> getGuests() {
         return Collections.unmodifiableSet(guests);
     }
@@ -92,6 +97,15 @@ public class Reservation {
         if (!isRoomFull()) {
             guests.add(guest);
         }
+    }
+
+    /**
+     * Remove a {@code Guest} by the pre saved temporary guest id.
+     *
+     * @return {@code true} if the {@code Guest} was removed.
+     */
+    public boolean removeGuestById(UUID guestId) {
+        return guests.removeIf(guest -> guest.getGuestId().equals(guestId));
     }
 
     public void clearGuests() {
@@ -320,25 +334,4 @@ public class Reservation {
                 "room=" + room +
                 '}';
     }
-
-
-//    /**
-//     * Extracted for reuse in ajax dates validation.
-//     *
-//     * @return Pair with key = field, value = error message or null if date span is valid.
-//     */
-//    public Pair<String, String> validateDates(LocalDate now) {
-//        if (checkInDate == null) {
-//            return new Pair<>("checkInDate", "Missing check in date");
-//        } else if (checkOutDate == null) {
-//            return new Pair<>("checkOutDate", "Missing check out date");
-//        } else if (checkInDate.isBefore(now)) {
-//            return new Pair<>("checkInDate", "Check in date must be in the future");
-//        } else if (checkOutDate.isBefore(checkInDate)) {
-//            return new Pair<>("checkOutDate", "Check out date must be after check in date");
-//        } else if (getTotalNights() < 1) {
-//            return new Pair<>("checkOutDate", "Reservation must be for at least 1 night");
-//        }
-//        return null;
-//    }
 }

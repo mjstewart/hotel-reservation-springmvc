@@ -67,7 +67,7 @@
         <h3 class="ui dividing header">Summary</h3>
 
         <div>
-            <h4 th:text="${reservationFlow.reservation.room.hotel.name}"></h4>
+            <h4 th:text="${reservationFlow.reservation.room.hotel.key}"></h4>
 
             <div id="quickSummaryDates">
                 <p class="bold">Check in:</p>
@@ -101,6 +101,24 @@
 
         <table class="reservation-summary-table">
             <tbody>
+            <tr>
+                <td class="bold">Room</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCost())}"></td>
+            </tr>
+            <tr th:if="${reservationFlow.reservation.dates.lateCheckout}">
+                <td class="bold">Late Checkout</td>
+                <td th:with="fee=${reservationFlow.reservation.getChargeableLateCheckoutFee()}"
+                    th:text="${fee.compareTo(T(java.math.BigDecimal).ZERO) == 0} ? 'Free' : ${#numbers.formatCurrency(fee)}">
+                </td>
+            </tr>
+            <tr th:unless="${reservationFlow.reservation.generalExtras.isEmpty()}">
+                <td class="bold">Extras</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalGeneralExtrasCost())}"></td>
+            </tr>
+            <tr th:unless="${reservationFlow.reservation.mealPlans.isEmpty()}">
+                <td class="bold">Meals</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalMealPlansCost())}"></td>
+            </tr>
             <tr>
                 <td class="bold">Total</td>
                 <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostExcludingTax())}"></td>

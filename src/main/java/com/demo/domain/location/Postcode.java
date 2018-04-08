@@ -1,4 +1,4 @@
-package com.demo.domain.address;
+package com.demo.domain.location;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;

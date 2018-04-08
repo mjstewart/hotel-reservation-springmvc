@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}"
+      xmlns:qs="http://www.w3.org/1999/xhtml">
+<body>
+<div layout:fragment="content" th:with="totalResults=${results.getTotalElements()}">
+
+    <div class="ui breadcrumb">
+        <a class="section" th:href="@{/}">Search</a>
+        <i class="right angle icon divider"></i>
+        <div class="active section">Hotels</div>
+    </div>
+
+
+    <div class="ui info message" th:if="${totalResults == 0}">
+        0 hotels found - <a th:href="@{/}">Search again</a>
+    </div>
+
+    <div th:unless="${totalResults == 0}">
+        <h3 class="ui dividing header margin-top-20" th:unless="${totalResults == 0}"
+            th:text="|Results (${totalResults})|"></h3>
+        <table class="ui celled table">
+            <thead>
+            <tr>
+                <th>Hotel</th>
+                <th>Stars</th>
+                <th>Suburb</th>
+                <th>State</th>
+                <th>Postcode</th>
+                <th>View rooms</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="hotel,stat : ${results.getContent()}">
+                <td>
+                    <a th:href="@{/hotel(id=${hotel.id})}" th:text="${hotel.name}"></a>
+                </td>
+                <td>
+                    <div class="ui star rating disabled" th:each="star : ${#numbers.sequence(1, hotel.stars)}">
+                        <i class="icon active"></i>
+                    </div>
+                </td>
+                <td th:text="${hotel.address.suburb}"></td>
+                <td th:text="${hotel.address.state}"></td>
+                <td th:text="${hotel.address.postcode.value}"></td>
+                <td>
+                    <a th:href="@{/hotel/{id}/rooms(id=${hotel.id})}">Rooms</a>
+                </td>
+            </tr>
+            </tbody>
+
+            <tfoot th:with="url=|${#request.getRequestURI()}?${#request.getQueryString()}|,
+                    pageNumber=${results.getPageable().getPageNumber()}">
+
+            <tr>
+
+                <p th:text="|getTotalPages ${results.getTotalPages()}|"></p>
+                <p th:text="|getTotalElements ${results.getTotalElements()}|"></p>
+                <p th:text="|getPageNumber ${results.getPageable().getPageNumber()}|"></p>
+                <p th:text="|getPageSize ${results.getPageable().getPageSize()}|"></p>
+                <p th:text="|hasPrevious ${results.getPageable().hasPrevious()}|"></p>
+                <p th:text="${#request.getParameterMap()}"></p>
+                <p th:text="${#request.getParameterValues('sort')}"></p>
+                <th colspan="6">
+                    <span class="margin-right-10"
+                          th:text="|${pageNumber + 1} of ${results.getTotalPages()}|"></span>
+                    <div class="ui pagination menu">
+                        <a class="icon item"
+                           th:if="${results.getPageable().hasPrevious()}"
+                           th:href="@{${url}(page=0)}">
+                            <i class="angle double left icon"></i>
+                        </a>
+                        <a class="icon item"
+                           th:if="${results.getPageable().hasPrevious()}"
+                           th:href="@{${#request.getRequestURI()}(page=${pageNumber - 1},${#request.getQueryString()})}">
+                            <i class="left chevron icon"></i>
+                        </a>
+                        <a class="icon item"
+                           th:if="${pageNumber < results.getTotalPages()}"
+                           th:with="currPage=|page=${pageNumber}|,nextPage=|page=${currPage + 1}|,q=${#request.getQueryString()},
+                           newQuery=${#strings.replace(q,currPage, nextPage)}"
+                           th:href="@{${#request.getRequestURI()}(${newQuery})}">
+                            <h1 th:text="${#qs.rplace({sort:{0:'stars,asc'}})}"></h1>
+                            <i class="right chevron icon"></i>
+                            <p th:text="${newQuery}"></p>
+                        </a>
+                        <a class="icon item"
+                           th:if="${pageNumber < results.getTotalPages()}"
+                           th:href="@{${url}(page=${results.getTotalPages() - 1})}">
+                            <i class="angle double right icon"></i>
+                        </a>
+                    </div>
+                </th>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+<th:block layout:fragment="script">
+
+</th:block>
+
+</body>
+</html>

@@ -2,11 +2,13 @@ package com.demo.reservation;
 
 import com.demo.TimeProvider;
 import com.demo.domain.*;
+import com.demo.domain.location.Address;
+import com.demo.domain.location.Postcode;
+import com.demo.domain.location.State;
 import com.demo.persistance.RoomRepository;
 import com.demo.reservation.flow.ReservationController;
 import com.demo.reservation.flow.forms.DateFormParams;
 import com.demo.reservation.flow.forms.ReservationFlow;
-import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,9 +25,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.demo.GlobalErrorMatchers.globalErrorMatchers;
 import static com.demo.reservation.flow.forms.FlowMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,14 +50,17 @@ public class ReservationControllerTest {
     private TimeProvider timeProvider;
 
     private Room createRoom() {
-        Hotel hotel = new Hotel("Hotel Royal", "Melbourne", 3, "royal@hotel.com");
+        Address address = new Address("Hotel Royal", "166 Albert Road", null,
+                State.VIC, "Melbourne", new Postcode("3000"));
+
+        Hotel hotel = new Hotel("Hotel Royal", address, 3, "royal@hotel.com");
         Room room = new Room("ABC123", RoomType.Economy, 4, BigDecimal.valueOf(23.50));
         room.setHotel(hotel);
         return room;
     }
 
     /**
-     * Contains a valid Reservation expected in the Guest flow step.
+     * Creates a {@code ReservationFlow} in the expected state for entering in the reservation dates.
      *
      * <p>ReservationDates is empty ready to bind to the new ReservationDates form.</p>
      */
@@ -65,7 +72,7 @@ public class ReservationControllerTest {
     }
 
     /**
-     * Creates a valid Reservation that is expected in the Guest flow step.
+     * Creates a {@code ReservationFlow} in the expected state for entering in guest details.
      *
      * <ul>
      * <li>Step 1 - ReservationDates = valid</li>
@@ -92,9 +99,6 @@ public class ReservationControllerTest {
     private LinkedMultiValueMap<String, String> emptyParams() {
         return new LinkedMultiValueMap<>();
     }
-
-
-
 
 
     // Flow step 1 - GET date form
@@ -159,6 +163,13 @@ public class ReservationControllerTest {
     }
 
     // Flow step 1 - POST date form
+
+    @Test
+    public void postDateForm_Cancel_RedirectHome() throws Exception {
+        mockMvc.perform(post("/reservation/dates")
+                .param("cancel", ""))
+                .andExpect(view().name("redirect:/"));
+    }
 
     @Test
     public void postDateForm_EmptyForm_ExpectedBeanValidationErrors() throws Exception {
@@ -397,9 +408,10 @@ public class ReservationControllerTest {
 
         reservationFlow.getReservation().getRoom().setBeds(1);
 
-        Matcher<Object> reservationContainsGuest = Matchers.hasProperty("reservation",
-                Matchers.hasProperty("guests",
-                        Matchers.containsInAnyOrder(new Guest("marie", "clarke", false))));
+        ResultMatcher reservationContainsGuest = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests",
+                                Matchers.containsInAnyOrder(new Guest("marie", "clarke", false)))));
 
         // expect to create a new guest object to bind to the new form.
         ResultMatcher didCreateNewGuestObject = model().attribute("guest", Matchers.is(new Guest()));
@@ -413,10 +425,65 @@ public class ReservationControllerTest {
                 .andExpect(view().name("reservation/guests"))
                 .andExpect(model().hasNoErrors())
                 .andExpect(didCreateNewGuestObject)
-                .andExpect(model().attribute("reservationFlow", reservationContainsGuest))
+                .andExpect(reservationContainsGuest)
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
     }
+
+    /**
+     * Id not found should never happen as the button will always contain a guest that exists.
+     * Note that a new {@code Guest} must be in the model to bind to the guest form.
+     */
+    @Test
+    public void postRemoveGuest_GuestIdNotFound_ShouldHaveNoEffect() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+
+        ResultMatcher reservationContainsGuest = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests", Matchers.hasSize(0))));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow)
+                .param("removeGuest", UUID.randomUUID().toString()))
+                .andExpect(view().name("reservation/guests"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(model().attribute("guest", Matchers.is(new Guest())))
+                .andExpect(reservationContainsGuest)
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+    }
+
+    /**
+     * Note that a new {@code Guest} must be in the model to bind to the guest form.
+     */
+    @Test
+    public void postRemoveGuest_GuestIdFound_ShouldBeRemoved() throws Exception {
+        ReservationFlow reservationFlow = toGuestFlow();
+        reservationFlow.getReservation().getRoom().setBeds(2);
+
+        Guest guestA = new Guest("john", "smith", false);
+        Guest guestB = new Guest("nicole", "smith", false);
+
+        reservationFlow.getReservation().addGuest(guestA);
+        reservationFlow.getReservation().addGuest(guestB);
+
+        assertThat(reservationFlow.getReservation().getGuests()).containsExactlyInAnyOrder(guestA, guestB);
+
+        ResultMatcher hasExpectedGuests = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("guests", Matchers.containsInAnyOrder(guestB))));
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow)
+                .param("removeGuest", guestA.getGuestId().toString()))
+                .andExpect(view().name("reservation/guests"))
+                .andExpect(model().hasNoErrors())
+                .andExpect(model().attribute("guest", Matchers.is(new Guest())))
+                .andExpect(hasExpectedGuests)
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+    }
+
 
     /**
      * Transition from Guest form to Extras form and perform final guest checks.
@@ -452,4 +519,3 @@ public class ReservationControllerTest {
                 .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Guests));
     }
 }
-

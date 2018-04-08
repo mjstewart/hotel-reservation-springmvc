@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
+<body>
+<div layout:fragment="content">
+    <table class="ui celled table">
+        <thead>
+            <tr>
+                <th>Hotel</th>
+                <th>Room Number</th>
+                <th>Room Type</th>
+                <th># Beds</th>
+                <th>Cost per night</th>
+                <th>Book</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="room,stat : ${rooms}">
+                <td>
+                    <a th:href="@{/hotel(id=${room.hotel.id})}" th:text="${room.hotel.getName()}"></a>
+                </td>
+                <td th:text="${room.roomNumber}"></td>
+                <td th:text="${room.roomType}"></td>
+                <td th:text="${room.beds}"></td>
+                <td th:text="${#numbers.formatCurrency(room.costPerNight)}"></td>
+                <td>
+                    <a th:href="@{/reservation(roomId=${room.id})}">Book</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<th:block layout:fragment="script">
+
+</th:block>
+
+</body>
+</html>

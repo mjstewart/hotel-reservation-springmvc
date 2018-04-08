@@ -15,6 +15,18 @@ html, body {
     height: 100%;
 }
 
+.flex-center-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.flex-center-row {
+    display: flex;
+    justify-content: center;
+}
+
 .bold {
     font-weight: bold;
 }
@@ -25,6 +37,10 @@ html, body {
 
 .margin-top-20 {
     margin-top: 20px !important;
+}
+
+.margin-top-30 {
+    margin-top: 30px !important;
 }
 
 .margin-top-30 {
@@ -59,6 +75,10 @@ html, body {
     font-size: 1.7em !important;
 }
 
+.icon-massive {
+    font-size: 2.2em !important;
+}
+
 .flex-between {
     display: flex;
     justify-content: space-between;
@@ -86,4 +106,13 @@ html, body {
 
 .main__content-group:last-child {
     margin-bottom: 0 !important;
+}
+
+#searchContainer {
+    background: lightskyblue;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+    width: 80%;
 }

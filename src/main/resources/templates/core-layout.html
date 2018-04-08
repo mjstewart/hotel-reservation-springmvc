@@ -5,8 +5,8 @@
 <head>
     <meta charset="UTF-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title layout:title-pattern="$LAYOUT_TITLE - $CONTENT_TITLE" th:text="#{app.name}"></title>
+    <meta key="viewport" content="width=device-width, value-scale=1"/>
+    <title layout:title-pattern="$LAYOUT_TITLE - $CONTENT_TITLE" th:text="#{app.key}"></title>
 
     <link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}"/>
     <link rel="stylesheet" type="text/css" th:href="@{/webjars/Semantic-UI/2.2.10/semantic.min.css}"/>
@@ -19,38 +19,40 @@
 </head>
 <body>
 
-<div class="ui inverted segment">
-    <div class="ui inverted secondary pointing menu">
-        <a class="item" th:classappend="${#request.getRequestURI().endsWith('/')} ? 'active'" href="/">
-            Home
-        </a>
-        <div class="right menu">
-            <a class="item" th:classappend="${#request.getRequestURI().endsWith('/register')} ? 'active'" href="/register">
-                Register
+<div id="wrapper">
+    <div class="ui inverted segment">
+        <div class="ui inverted secondary pointing menu">
+            <a class="item" th:classappend="${#request.getRequestURI().endsWith('/')} ? 'active'" href="/">
+                Home
             </a>
-            <a class="item" th:classappend="${#request.getRequestURI().endsWith('/admin')} ? 'active'" href="/admin">
-                Admin
-            </a>
+            <div class="right menu">
+                <a class="item" th:classappend="${#request.getRequestURI().endsWith('/register')} ? 'active'" href="/register">
+                    Register
+                </a>
+                <a class="item" th:classappend="${#request.getRequestURI().endsWith('/admin')} ? 'active'" href="/admin">
+                    Admin
+                </a>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="ui container" layout:fragment="content"></div>
+    <div class="ui container" layout:fragment="content"></div>
 
-<div id="dimmer" class="ui dimmer">
-    <div class="ui large loader"></div>
-</div>
-
-<div class="ui modal">
-    <div class="header">
-        Error
+    <div id="dimmer" class="ui dimmer">
+        <div class="ui large loader"></div>
     </div>
-    <div class="content">
-        <p>Sorry, there are currently errors with the server.</p>
-    </div>
-    <div class="actions">
-        <div class="ui right icon button approve">
-            Got it
+
+    <div class="ui modal">
+        <div class="header">
+            Error
+        </div>
+        <div class="content">
+            <p>Sorry, there are currently errors with the server.</p>
+        </div>
+        <div class="actions">
+            <div class="ui right icon button approve">
+                Got it
+            </div>
         </div>
     </div>
 </div>

@@ -1,5 +1,9 @@
 package com.demo.domain;
 
+import com.demo.domain.location.Address;
+import com.demo.util.Utils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -7,6 +11,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,7 +26,7 @@ public class Hotel implements Serializable {
     private String name;
 
     @Column(nullable = false)
-    private String city;
+    private Address address;
 
     @Column(nullable = false)
     private int stars;
@@ -30,6 +35,8 @@ public class Hotel implements Serializable {
     private String email;
 
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL)
+    // Stop bidirectional relationship which causes a cycle.
+    @JsonIgnore
     private Set<Room> rooms;
 
     @Column(nullable = false)
@@ -53,8 +60,8 @@ public class Hotel implements Serializable {
     private final static LocalTime DEFAULT_LATEST_CHECKOUT = LocalTime.of(22, 0);
     private final static BigDecimal DEFAULT_LATE_CHECKOUT_FEE = BigDecimal.valueOf(15.95);
 
-    public Hotel(String name, String city, int stars, String email) {
-        this(name, city, stars, email,
+    public Hotel(String name, Address address, int stars, String email) {
+        this(name, address, stars, email,
                 DEFAULT_EARLIEST_CHECK_IN,
                 DEFAULT_LATEST_CHECK_IN,
                 DEFAULT_STANDARD_CHECKOUT,
@@ -62,14 +69,14 @@ public class Hotel implements Serializable {
                 DEFAULT_LATE_CHECKOUT_FEE);
     }
 
-    public Hotel(String name, String city, int stars, String email,
+    public Hotel(String name, Address address, int stars, String email,
                  LocalTime earliestCheckInTime,
                  LocalTime latestCheckInTime,
                  LocalTime standardCheckOutTime,
                  LocalTime latestCheckOutTime,
                  BigDecimal lateCheckoutFee) {
         this.name = name;
-        this.city = city;
+        this.address = address;
         this.stars = stars;
         this.email = email;
         this.rooms = new HashSet<>();
@@ -92,14 +99,6 @@ public class Hotel implements Serializable {
         room.setHotel(this);
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
@@ -108,12 +107,16 @@ public class Hotel implements Serializable {
         this.name = name;
     }
 
-    public String getCity() {
-        return city;
+    public Long getId() {
+        return id;
     }
 
-    public void setCity(String city) {
-        this.city = city;
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Address getAddress() {
+        return address;
     }
 
     public int getStars() {
@@ -190,5 +193,30 @@ public class Hotel implements Serializable {
         return Stream.iterate(earliestCheckInTime, time -> time.plusHours(1))
                 .limit(span)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Hotel hotel = (Hotel) o;
+        return Objects.equals(address, hotel.address) &&
+                Objects.equals(email, hotel.email);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(address, email);
+    }
+
+    @Override
+    public String toString() {
+        return "Hotel{" +
+                "id=" + id +
+                ", address=" + address +
+                ", stars=" + stars +
+                ", email='" + email + '\'' +
+                '}';
     }
 }

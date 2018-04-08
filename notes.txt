@@ -24,6 +24,49 @@ The flow of execution is
 
 
 
+@SessionAttributes and @ModelAttribute vs HttpSession.
 
 
+- Note the keyword MODEL attributes.
+@SessionAttributes enables persisting model attributes session between requests
+
+@Controller
+@SessionAttributes("someAttribute")
+@RequestMapping("/test")
+public class FirstController {
+
+    @GetMapping("/init")
+    public String testHandler1(Model model, HttpSession session) {
+        session.setAttribute("session", "TRUE");         <-- session scope
+        model.addAttribute("someAttribute", "TRUE");     <-- model and session scope
+        model.addAttribute("model", "TRUE");             <-- request scope
+        return "index";
+    }
+
+}
+
+Pay attention to model.addAttribute("someAttribute", "TRUE");
+Since you used @SessionAttributes("someAttribute"), even though you add it to the model, it gets persisted to
+the session so you can get "conversational scoped".
+
+This is why if you create a method annotated with @ModelAttribute within the controller like so
+AND the controller has @SessionAttribute("address")
+
+@ModelAttribute("address")
+public Address addAddress() {
+	return new Address();
+}
+
+Spring will add the "address" object to the Model, making it available for request scope AND it will also
+persist it to the Session making it available in the session scope too.
+
+
+Some things to note.
+
+- Adding to the Model only without a matching @SessionAttribute will mean its only request scope. Request scope
+means that the model attribute will only be available in the view template for this request, not for any future requests
+since its not persisted.
+
+- adding attributes to the Session through HttpSession has nothing to do with the Model or conversational scope.
+It will purely add something to the Session scope and thats it!
 

@@ -12,10 +12,12 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
 import java.util.Optional;
+import java.util.UUID;
 
 @Controller
 @SessionAttributes("reservationFlow")
@@ -35,6 +37,7 @@ public class ReservationController {
      * HTTP request to populate the session with the new object.
      * <p>Subsequent HTTP requests will go directly to the handler and the statement {@code @ModelAttribute("reservationFlowForms")}
      * will grab the object directly from the session.
+     *
      */
     @ModelAttribute("reservationFlow")
     public ReservationFlow getReservationFlow() {
@@ -48,7 +51,8 @@ public class ReservationController {
      */
     @GetMapping("/reservation")
     public String getDateForm(@RequestParam(value = "roomId") Long roomId,
-                              @ModelAttribute("reservationFlow") ReservationFlow reservationFlow) throws NotFoundException {
+                              @ModelAttribute("reservationFlow") ReservationFlow reservationFlow)
+            throws NotFoundException {
 
         Optional<Room> maybeRoom = roomRepository.findById(roomId);
         if (!maybeRoom.isPresent()) {
@@ -94,6 +98,12 @@ public class ReservationController {
         reservationFlow.completeStep(ReservationFlow.Step.Dates);
         redirectAttributes.addFlashAttribute("reservationFlow", reservationFlow);
         return "redirect:/reservation/guests";
+    }
+
+    @PostMapping(value = "/reservation/dates", params = "cancel")
+    public String cancelDates(SessionStatus sessionStatus) {
+        sessionStatus.setComplete();
+        return "redirect:/";
     }
 
     /**
@@ -146,6 +156,15 @@ public class ReservationController {
         // create a new guest to rebind to the guest form
         model.addAttribute("guest", new Guest());
 
+        return "reservation/guests";
+    }
+
+    @PostMapping(value = "/reservation/guests", params = "removeGuest")
+    public String postRemoveGuest(@RequestParam("removeGuest") UUID guestId,
+                                  @ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                  Model model) {
+        reservationFlow.getReservation().removeGuestById(guestId);
+        model.addAttribute("guest", new Guest());
         return "reservation/guests";
     }
 

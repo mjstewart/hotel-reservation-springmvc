@@ -1,4 +1,6 @@
-package com.demo.domain.address;
+package com.demo.domain.location;
+
+import com.demo.util.Utils;
 
 import javax.persistence.*;
 import javax.validation.Valid;
@@ -75,7 +77,7 @@ public class Address {
     }
 
     public String getSuburb() {
-        return suburb;
+        return Utils.capitalizeWords(suburb);
     }
 
     public void setSuburb(String suburb) {
