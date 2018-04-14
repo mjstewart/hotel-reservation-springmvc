@@ -41,46 +41,49 @@ public class QueryStringTest {
 
         assertThat(stateMap.get("state"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(0, new QueryString.KeyValue("state", "VIC"))
+                        QueryString.KeyValue.fromKeyValue("state=VIC").get().toIndex(0)
                 );
 
         assertThat(stateMap.get("region"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(1, new QueryString.KeyValue("region", "outer")),
-                        new QueryString.KeyValueIndex(3, new QueryString.KeyValue("region", "north")),
-                        new QueryString.KeyValueIndex(10, new QueryString.KeyValue("region", "central"))
+                        QueryString.KeyValue.fromKeyValue("region=outer").get().toIndex(1),
+                        QueryString.KeyValue.fromKeyValue("region=north").get().toIndex(3),
+                        QueryString.KeyValue.fromKeyValue("region=central").get().toIndex(10)
                 );
 
         assertThat(stateMap.get("suburb"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(2, new QueryString.KeyValue("suburb", "Melbourne"))
+                        QueryString.KeyValue.fromKeyValue("suburb=Melbourne").get().toIndex(2)
                 );
 
         assertThat(stateMap.get("postcode"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(4, new QueryString.KeyValue("postcode", "3000"))
+                        QueryString.KeyValue.fromKeyValue("postcode=3000").get().toIndex(4)
                 );
 
         assertThat(stateMap.get("page"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(5, new QueryString.KeyValue("page", "0"))
+                        QueryString.KeyValue.fromKeyValue("page=0").get().toIndex(5)
                 );
 
         assertThat(stateMap.get("sort"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(6, new QueryString.KeyValue("sort", "stars,desc")),
-                        new QueryString.KeyValueIndex(9, new QueryString.KeyValue("sort", "name"))
+                        QueryString.KeyValue.fromKeyValue("sort=stars,desc").get().toIndex(6),
+                        QueryString.KeyValue.fromKeyValue("sort=name").get().toIndex(9)
                 );
 
         assertThat(stateMap.get("locale"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(7, new QueryString.KeyValue("locale", "3"))
+                        QueryString.KeyValue.fromKeyValue("locale=3").get().toIndex(7)
                 );
 
         assertThat(stateMap.get("age"))
                 .containsExactly(
-                        new QueryString.KeyValueIndex(8, new QueryString.KeyValue("age", "50"))
+                        QueryString.KeyValue.fromKeyValue("age=50").get().toIndex(8)
                 );
+
+        // Sanity check, there are 10 keys, the next key if we were to add to the end would be 11.
+        assertThat(queryString.getNextOverallIndex()).isEqualTo(11);
     }
 
     /**

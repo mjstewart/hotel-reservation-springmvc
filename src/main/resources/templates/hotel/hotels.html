@@ -62,10 +62,16 @@
                 <p th:text="|hasPrevious ${results.getPageable().hasPrevious()}|"></p>
 
 
-                <h3 th:with="newQueryString=${#querystring.replaceNth(#request.getQueryString(), {sort: {1: 'age'}})}"
+                <h3 th:with="newQueryString=${#qs.replaceNth(#request.getQueryString(), {sort: {1: 'age'}})}"
                     th:text="${newQueryString}"></h3>
 
-                <h3 th:with="newQueryString=${#querystring.replaceFirst(#request.getQueryString(), 'sort', 'country,state')}"
+                <h3 th:with="newQueryString=${#qs.replaceFirst(#request.getQueryString(), 'sort', 'country,state')}"
+                    th:text="${newQueryString}"></h3>
+
+                <h3 th:with="newQueryString=${#qs.replaceFirst(#request, 'sort', 'country,state')}"
+                    th:text="${newQueryString}"></h3>
+
+                <h3 th:with="newQueryString=${#qs.replaceFirst('name=me&sort=abc', 'sort', 'country,state')}"
                     th:text="${newQueryString}"></h3>
 
                 <th colspan="6">
