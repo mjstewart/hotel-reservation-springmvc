@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}"
+      xmlns:qs="http://www.w3.org/1999/xhtml">
+<body>
+<div layout:fragment="content">
+
+    <h4 th:with="newQueryString=${#qs.replaceFirst(#request, 'sort', 'country,state')}"
+        th:text="${newQueryString}"></h4>
+
+    <h4 th:with="newQueryString=${#qs.replaceNth(#request, {region: { 1: 'Auckland', 2: 'AUKL' }})}"
+        th:text="${newQueryString}"></h4>
+
+
+    <h4 th:with="newQueryString=${#qs.removeN(#request, 'name', -1)}"
+        th:text="${newQueryString}"></h4>
+</div>
+<th:block layout:fragment="script">
+
+</th:block>
+
+</body>
+</html>

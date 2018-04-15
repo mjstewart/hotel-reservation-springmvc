@@ -55,23 +55,17 @@
 
             <tr>
 
-                <p th:text="|getTotalPages ${results.getTotalPages()}|"></p>
-                <p th:text="|getTotalElements ${results.getTotalElements()}|"></p>
-                <p th:text="|getPageNumber ${results.getPageable().getPageNumber()}|"></p>
-                <p th:text="|getPageSize ${results.getPageable().getPageSize()}|"></p>
-                <p th:text="|hasPrevious ${results.getPageable().hasPrevious()}|"></p>
+                <!--<p th:text="|getTotalPages ${results.getTotalPages()}|"></p>-->
+                <!--<p th:text="|getTotalElements ${results.getTotalElements()}|"></p>-->
+                <!--<p th:text="|getPageNumber ${results.getPageable().getPageNumber()}|"></p>-->
+                <!--<p th:text="|getPageSize ${results.getPageable().getPageSize()}|"></p>-->
+                <!--<p th:text="|hasPrevious ${results.getPageable().hasPrevious()}|"></p>-->
 
-
-                <h3 th:with="newQueryString=${#qs.replaceNth(#request.getQueryString(), {sort: {1: 'age'}})}"
-                    th:text="${newQueryString}"></h3>
-
-                <h3 th:with="newQueryString=${#qs.replaceFirst(#request.getQueryString(), 'sort', 'country,state')}"
-                    th:text="${newQueryString}"></h3>
 
                 <h3 th:with="newQueryString=${#qs.replaceFirst(#request, 'sort', 'country,state')}"
                     th:text="${newQueryString}"></h3>
 
-                <h3 th:with="newQueryString=${#qs.replaceFirst('name=me&sort=abc', 'sort', 'country,state')}"
+                <h3 th:with="newQueryString=${#qs.replaceNth(#request, {region: { 1: 'Auckland', 2: 'AUKL' }})}"
                     th:text="${newQueryString}"></h3>
 
                 <th colspan="6">
@@ -95,7 +89,7 @@
                            th:href="@{${#request.getRequestURI()}(${newQuery})}">
                             <!--<h1 th:with="${#querystring.rplace({sort:{0:'stars,asc'}})}"></h1>-->
                             <i class="right chevron icon"></i>
-                            <p th:text="${newQuery}"></p>
+                            <p></p>
                         </a>
                         <a class="icon item"
                            th:if="${pageNumber < results.getTotalPages()}"

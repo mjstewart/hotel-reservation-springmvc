@@ -436,7 +436,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<String> values = new ArrayList<>(Arrays.asList("aa1", "bb 2", "cc 3", "dd"));
+        ArrayList<Object> values = new ArrayList<>(Arrays.asList("aa1", "bb 2", "cc 3", "dd"));
 
         String result = helper.replaceN(mockHttpRequest, "missing", values);
 
@@ -480,7 +480,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<String> values = new ArrayList<>(Arrays.asList("x 1", "x 2", "x3", "x4", "x5", "x6", "x7"));
+        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x 1", "x 2", "x3", "x4", "x5", "x6", "x7"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
@@ -504,7 +504,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<String> values = new ArrayList<>(Arrays.asList("x 1", "x 2"));
+        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x 1", "x 2"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
@@ -527,7 +527,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<String> values = new ArrayList<>(Arrays.asList("x1", "x2", "x 3", "x 4"));
+        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x1", "x2", "x 3", "x 4"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
@@ -550,7 +550,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<String> values = new ArrayList<>(Arrays.asList("x  1", " x 2 ", "x 3", "  x 4"));
+        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x  1", " x 2 ", "x 3", "  x 4"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 

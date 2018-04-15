@@ -3,10 +3,7 @@ package com.demo.thymeleaf.utils;
 import org.thymeleaf.expression.Uris;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -95,6 +92,7 @@ public class QueryString {
     public String reconstructQueryString() {
         return state.entrySet().stream()
                 .flatMap(e -> e.getValue().stream())
+                .filter(kvi -> !kvi.keyValue.deleted)
                 .sorted(Comparator.comparing(KeyValueIndex::getOverallIndex))
                 .map(keyValueIndex -> keyValueIndex.keyValue.escape(uris::escapeQueryParam))
                 .collect(Collectors.joining("&"));
@@ -206,19 +204,20 @@ public class QueryString {
     public String removeFirst(String key) {
         List<KeyValueIndex> indices = state.get(key);
         if (indices != null && !indices.isEmpty()) {
-            indices.remove(0);
+            indices.get(0).keyValue.delete();
         }
         return reconstructQueryString();
     }
 
     /**
-     * Removes every key and associated values.
+     * Removes every key and their associated values.
      *
      * @param keys The target keys.
      * @return The new query string.
      */
     public String removeAll(List<String> keys) {
         if (keys != null) {
+            // O(1) removal for each key vs marking each key/value pair as deleted.
             keys.forEach(state::remove);
         }
         return reconstructQueryString();
@@ -228,7 +227,7 @@ public class QueryString {
      * The same concept as dropN in functional languages where the first n occurrences of the target key are removed.
      *
      * @param key The target key.
-     * @param n Total occurrences of the key to remove.
+     * @param n   Total occurrences of the key to remove.
      * @return The new query string.
      */
     public String removeN(String key, int n) {
@@ -244,13 +243,9 @@ public class QueryString {
                 return removeAll(new ArrayList<>(Collections.singletonList(key)));
             } else {
                 int removedCount = 0;
-                Iterator<KeyValueIndex> iterator = indices.iterator();
-                while (iterator.hasNext()) {
-                    iterator.next();
-                    if (removedCount < n) {
-                        iterator.remove();
-                        removedCount++;
-                    }
+                for (int i = 0; i < indices.size() && removedCount < n; i++) {
+                    indices.get(i).keyValue.delete();
+                    removedCount++;
                 }
             }
         }
@@ -271,14 +266,14 @@ public class QueryString {
      *     removeNth('a', 1) => a=100&b=200
      * </pre>
      *
-     * @param key The target key.
+     * @param key      The target key.
      * @param nthIndex The relative index to remove.
      * @return The new query string.
      */
     public String removeNth(String key, int nthIndex) {
         List<KeyValueIndex> indices = state.get(key);
         if (indices != null && !indices.isEmpty() && nthIndex >= 0 && nthIndex < indices.size()) {
-            indices.remove(nthIndex);
+            indices.get(nthIndex).keyValue.delete();
         }
         return reconstructQueryString();
     }
@@ -296,24 +291,66 @@ public class QueryString {
      *     removeNth('a', [0, 2]) => b=200&a=300
      * </pre>
      *
-     * @param key The target key.
+     * @param key             The target key.
      * @param relativeIndexes The relative indexes to remove.
      * @return The new query string.
      */
     public String removeManyNth(String key, List<Integer> relativeIndexes) {
+        applyToKeyValues(key, relativeIndexes, kvi -> kvi.keyValue.delete());
+        return reconstructQueryString();
+    }
+
+    /**
+     * Applies a side effecting consumer to each {@code KeyValueIndex} only if its index position is in the supplied
+     * relative indexes list.
+     *
+     * <p>For example, consider the below state for key2 where the consumer will delete the supplied value.</p>
+     *
+     * <pre>
+     *              0   1   2   (relative indexes)
+     *     {key2: [aa, bb, cc]}
+     *
+     *     applyToKeyValues('key2', [1, 2], consumer...) => results in bb and cc being marked for deletion.
+     * </pre>
+     *
+     * @param key             The target key.
+     * @param relativeIndexes Which indexes to apply the consumer to.
+     * @param consumer        The side effecting consumer function.
+     */
+    private void applyToKeyValues(String key, List<Integer> relativeIndexes, Consumer<KeyValueIndex> consumer) {
         List<KeyValueIndex> indices = state.get(key);
         if (indices != null && !indices.isEmpty()) {
-            int index = 0;
-            Iterator<KeyValueIndex> iterator = indices.iterator();
-            while (iterator.hasNext()) {
-                iterator.next();
-
-                if (relativeIndexes.contains(index)) {
-                    iterator.remove();
+            for (int i = 0; i < indices.size(); i++) {
+                if (relativeIndexes.contains(i)) {
+                    consumer.accept(indices.get(i));
                 }
-                index++;
             }
         }
+    }
+
+    public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value) {
+        return adjustNumericValueBy(key, relativeIndexes, value, currentValue -> true);
+//        applyToKeyValues(key, relativeIndexes, kvi -> {
+//            try {
+//                kvi.keyValue.value = Integer.toString(Integer.parseInt(kvi.keyValue.value) + value);
+//            } catch (NumberFormatException e) {
+//                // ignore
+//            }
+//        });
+//        return reconstructQueryString();
+    }
+
+    public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value, Predicate<Integer> p) {
+        applyToKeyValues(key, relativeIndexes, kvi -> {
+            try {
+                int parsedInt = Integer.parseInt(kvi.keyValue.value);
+                if (p.test(parsedInt)) {
+                    kvi.keyValue.value = Integer.toString(parsedInt + value);
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        });
         return reconstructQueryString();
     }
 
@@ -325,7 +362,8 @@ public class QueryString {
      *
      *     removeKeyMatchingValue('a', '700') => a=500&b=700
      * </pre>
-     * @param key The target key to delete if the value matches.
+     *
+     * @param key        The target key to delete if the value matches.
      * @param valueMatch The value to match triggering deletion.
      * @return The new query string.
      */
@@ -352,6 +390,7 @@ public class QueryString {
      *
      *     removeKeyMatchingValue('700') => a=500
      * </pre>
+     *
      * @param valueMatch The value to match triggering deletion.
      * @return The new query string.
      */
@@ -374,6 +413,7 @@ public class QueryString {
      *
      *     getFirstValue('a') => 500
      * </pre>
+     *
      * @param key The target key.
      * @return The associated value if found otherwise null.
      */
@@ -393,6 +433,7 @@ public class QueryString {
      *
      *     getFirstValue('a') => [500, 700]
      * </pre>
+     *
      * @param key The target key.
      * @return The associated values if found otherwise an empty list.
      */
@@ -414,7 +455,7 @@ public class QueryString {
      *
      * <p>Note: If the key already exists with the given value it is ignored.</p>
      *
-     * @param key The new key.
+     * @param key   The new key.
      * @param value The new value.
      * @return The new query string.
      */
@@ -457,6 +498,7 @@ public class QueryString {
         // After the mutation of the state map, rebuild it.
         return reconstructQueryString();
     }
+
 
     /**
      * Contains the result of casting a dynamic untyped map entry produced by a SpEL expression enabling simpler
@@ -540,7 +582,6 @@ public class QueryString {
     }
 
     /**
-     *
      * @return Unmodifiable state map.
      */
     public Map<String, List<KeyValueIndex>> getState() {
@@ -568,6 +609,7 @@ public class QueryString {
     public static class KeyValue {
         private String key;
         private String value;
+        private boolean deleted = false;
 
         private KeyValue(String key, String value) {
             this.key = key;
@@ -606,12 +648,16 @@ public class QueryString {
         }
 
         /**
-         *
          * @param overallIndex The overall index this {@code key=value} pair is located within the query string.
          * @return A {@code KeyValueIndex} which wraps this instance by providing an index.
          */
         public KeyValueIndex toIndex(int overallIndex) {
             return new KeyValueIndex(overallIndex, this);
+        }
+
+        public KeyValue delete() {
+            deleted = true;
+            return this;
         }
 
         @Override
