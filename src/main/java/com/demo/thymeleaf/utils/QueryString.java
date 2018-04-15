@@ -158,7 +158,7 @@ public class QueryString {
     /**
      * <ol>
      * <li>Accepts a map of instructions - {@code {sort:{0:'stars,asc', 1:'address,desc', 2: 'country,asc'}}}</li>
-     * <li>Does the sing and cast dance to convert into a list of {@code StateChangeInstruction}s for easier handling.
+     * <li>Convert into a list of {@code StateChangeInstruction}s for easier handling.
      * <pre>
      *         [{key='sort', relativeIndex=0, newValue='stars,asc'},
      *          {key='sort', relativeIndex=1, newValue='address,desc'},
@@ -171,27 +171,24 @@ public class QueryString {
      * @param stateChangeInstructions The map of instructions produced by the SpEL expression.
      * @return The new query string.
      */
-    public String replaceNth(Map<Object, Map<Object, Object>> stateChangeInstructions) {
+    public String replaceNth(Map<String, Map<Integer, String>> stateChangeInstructions) {
         if (stateChangeInstructions == null) {
             return reconstructQueryString();
         }
 
-        // Casts into domain object for handling by other methods.
         List<StateChangeInstruction> instructions = stateChangeInstructions.entrySet().stream()
                 .flatMap(entry -> {
                     // This will be the top level key to modify such as 'sort'
-                    String key = (String) entry.getKey();
+                    String key = entry.getKey();
 
-                    // Refers to the inner map containing the actual keys to update.
+                    // Refers to the inner value map containing the actual keys to update.
                     // {0: 'stars,asc', 1: 'address,desc', 2: 'country,asc'}
-                    Map<Object, Object> keyValueStateChanges = entry.getValue();
+                    Map<Integer, String> newRelativeIndexValues = entry.getValue();
 
-
-                    return keyValueStateChanges.entrySet().stream()
-                            .map(entry2 -> new StateChangeInstruction(key, (int) entry2.getKey(), (String) entry2.getValue()));
+                    return newRelativeIndexValues.entrySet().stream()
+                            .map(entry2 -> new StateChangeInstruction(key, entry2.getKey(), entry2.getValue()));
                 })
                 .collect(Collectors.toList());
-
         return applyStateChangeInstructions(instructions);
     }
 
@@ -330,14 +327,6 @@ public class QueryString {
 
     public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value) {
         return adjustNumericValueBy(key, relativeIndexes, value, currentValue -> true);
-//        applyToKeyValues(key, relativeIndexes, kvi -> {
-//            try {
-//                kvi.keyValue.value = Integer.toString(Integer.parseInt(kvi.keyValue.value) + value);
-//            } catch (NumberFormatException e) {
-//                // ignore
-//            }
-//        });
-//        return reconstructQueryString();
     }
 
     public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value, Predicate<Integer> p) {
@@ -355,7 +344,7 @@ public class QueryString {
     }
 
     /**
-     * Removes the target key if it has a matching value
+     * Removes the target key if its value is equal to the matching value
      *
      * <pre>
      *     a=500&b=700&a=700
@@ -364,7 +353,7 @@ public class QueryString {
      * </pre>
      *
      * @param key        The target key to delete if the value matches.
-     * @param valueMatch The value to match triggering deletion.
+     * @param valueMatch The value to match which triggers deletion.
      * @return The new query string.
      */
     public String removeKeyMatchingValue(String key, String valueMatch) {
@@ -372,7 +361,7 @@ public class QueryString {
 
         if (indices != null) {
             List<KeyValueIndex> newIndices = indices.stream()
-                    .filter(kv -> !kv.keyValue.value.equals(valueMatch))
+                    .filter(kv -> !kv.keyValue.isCaseInsensitiveEqual(valueMatch))
                     .collect(Collectors.toList());
 
             state.put(key, newIndices);
@@ -397,7 +386,7 @@ public class QueryString {
     public String removeAnyKeyMatchingValue(String valueMatch) {
         for (Map.Entry<String, List<KeyValueIndex>> entry : state.entrySet()) {
             List<KeyValueIndex> newIndices = entry.getValue().stream()
-                    .filter(kv -> !kv.keyValue.value.equals((valueMatch)))
+                    .filter(kv -> !kv.keyValue.isCaseInsensitiveEqual(valueMatch))
                     .collect(Collectors.toList());
 
             state.put(entry.getKey(), newIndices);
@@ -460,23 +449,25 @@ public class QueryString {
      * @return The new query string.
      */
     public String add(String key, String value) {
-        if (key == null || value == null || getAllValues(key).contains(value)) {
-            return reconstructQueryString();
-        }
+        Optional<KeyValue> maybeKeyValue = KeyValue.fromKeyValue(key, value);
 
-        KeyValueIndex newKeyValue = new KeyValueIndex(getNextOverallIndex(), new KeyValue(key, value));
-        List<KeyValueIndex> newKeyValueList = new ArrayList<>(Collections.singletonList(newKeyValue));
+        maybeKeyValue.ifPresent(kv -> {
+            if (!getAllValues(kv.key).contains(kv.value)) {
+                List<KeyValueIndex> newKeyValueList =
+                        new ArrayList<>(Collections.singletonList(kv.toIndex(getNextOverallIndex())));
 
-        state.merge(key, newKeyValueList, (existingList, newList) -> {
-            existingList.addAll(newList);
-            return existingList;
+                state.merge(key, newKeyValueList, (existingList, newList) -> {
+                    existingList.addAll(newList);
+                    return existingList;
+                });
+            }
         });
 
         return reconstructQueryString();
     }
 
     /**
-     * Adds all key value pairs to the end of the query string.
+     * Adds all key value pairs to the end of the query string only if it does not exist.
      *
      * @param keyValuePairs The key/value pairs to add.
      * @return The new query string.
@@ -487,6 +478,7 @@ public class QueryString {
                     .map(KeyValue::fromPair)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
+                    .filter(kv -> !getAllValues(kv.key).contains(kv.value))
                     .map(kv -> kv.toIndex(getNextOverallIndex()))
                     .forEach(kvi ->
                             state.merge(kvi.keyValue.key, new ArrayList<>(Arrays.asList(kvi)), (existingList, newList) -> {
@@ -499,6 +491,50 @@ public class QueryString {
         return reconstructQueryString();
     }
 
+
+    public String toggleSortDefaultAsc(String sortField) {
+        // need to know default sort direction... what happens when there is no sort direction, which way to toggle?
+
+        setSortDirection(sortField, currentDirection -> currentDirection.toggle(SortDirection.ASC));
+        return "";
+    }
+
+    public String setSortDirection(String sortField, Function<SortDirection, SortDirection> sortDirectionMapper) {
+        if (sortField == null) {
+            return reconstructQueryString();
+        }
+
+        List<KeyValueIndex> indices = state.get("sort");
+        if (indices != null) {
+
+            // store the relative index so we can update the existing object with the new sort order.
+            int foundIndex = -1;
+
+            /*
+             * When foundIndex is valid, sortTokens will contain the field and optionally sort order values.
+             * Eg: sort=country,desc or sort=country. This means index 0 will always contain the sort field based
+             * on spring conventions. Sort order is irrelevant given that is what this method is changing.
+             */
+            String[] sortTokens = null;
+
+            for (int i = 0; i < indices.size(); i++) {
+                sortTokens = indices.get(i).keyValue.value.split(",");
+
+                if (sortTokens.length > 0 && sortTokens[0].trim().equals(sortField.trim())) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            if (foundIndex != -1) {
+                SortDirection currentOrder = sortTokens.length == 2 ? SortDirection.from(sortTokens[1].trim()) : SortDirection.NONE;
+                SortDirection newSortDirection = sortDirectionMapper.apply(currentOrder);
+                String newSortValue = newSortDirection.withSortField(sortTokens[0].trim());
+                indices.set(foundIndex, indices.get(foundIndex).updateValue(newSortValue);
+            }
+        }
+
+        return reconstructQueryString();
+    }
 
     /**
      * Contains the result of casting a dynamic untyped map entry produced by a SpEL expression enabling simpler
@@ -617,7 +653,7 @@ public class QueryString {
         }
 
         public static Optional<KeyValue> fromPair(List<String> pair) {
-            if (pair.size() == 2 && !pair.get(0).isEmpty() && !pair.get(1).isEmpty()) {
+            if (pair.size() == 2 && !pair.get(0).trim().isEmpty() && !pair.get(1).trim().isEmpty()) {
                 return Optional.of(new KeyValue(pair.get(0), pair.get(1)));
             }
             return Optional.empty();
@@ -626,6 +662,13 @@ public class QueryString {
         public static Optional<KeyValue> fromKeyValue(String keyValue) {
             List<String> pair = Arrays.stream(keyValue.split("=")).collect(Collectors.toList());
             return fromPair(pair);
+        }
+
+        public static Optional<KeyValue> fromKeyValue(String key, String value) {
+            if (key == null || value == null) {
+                return Optional.empty();
+            }
+            return fromPair(Arrays.asList(key, value));
         }
 
         public String getKey() {
@@ -645,6 +688,10 @@ public class QueryString {
          */
         public String escape(Function<String, String> escapeMapper) {
             return escapeMapper.apply(key) + "=" + escapeMapper.apply(value);
+        }
+
+        public boolean isCaseInsensitiveEqual(String otherValue) {
+            return otherValue != null && value.toLowerCase().equals(otherValue.toLowerCase());
         }
 
         /**

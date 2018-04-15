@@ -512,7 +512,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Collections.emptyList();
+        List<Integer> relativeIndexes = Collections.emptyList();
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
@@ -532,7 +532,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Arrays.asList("0", "3");
+        List<Integer> relativeIndexes = Arrays.asList(0, 3);
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "missing", relativeIndexes);
@@ -553,7 +553,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Arrays.asList("-1", "4", "20");
+        List<Integer> relativeIndexes = Arrays.asList(-1, 4, 20);
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
@@ -577,7 +577,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Arrays.asList("0", "1", "2", "3");
+        List<Integer> relativeIndexes = Arrays.asList(0, 1, 2, 3);
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
@@ -601,7 +601,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Arrays.asList("3", "2", "1", "0");
+        List<Integer> relativeIndexes = Arrays.asList(3, 2, 1, 0);
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
@@ -624,7 +624,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Arrays.asList("1", "2");
+        List<Integer> relativeIndexes = Arrays.asList(1, 2);
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
@@ -647,7 +647,7 @@ public class RemoveTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        List<Object> relativeIndexes = Arrays.asList("0", "3");
+        List<Integer> relativeIndexes = Arrays.asList(0, 3);
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
@@ -766,6 +766,25 @@ public class RemoveTest {
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "ValueA");
+        assertThat(result).isEqualTo(expected);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * The equality check should not take case into consideration.
+     */
+    @Test
+    public void removeKeyMatchingValue_MatchingValueFound_CaseInsensitive() {
+        String query = "key4=ALL%20SORTED%202%2055_t3.7&key2=ValueA&key3=ValueA&key4=ALL%20SORTED%203&key2=ALL%20SORTED%202%2055_t3.7";
+        String expected = "key4=ALL%20SORTED%202%2055_t3.7&key2=ValueA&key3=ValueA&key4=ALL%20SORTED%203";
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "alL sOrtEd 2 55_t3.7");
         assertThat(result).isEqualTo(expected);
 
         verify(mockHttpRequest, times(1)).getQueryString();
@@ -909,4 +928,22 @@ public class RemoveTest {
         verifyNoMoreInteractions(mockHttpRequest);
     }
 
+    /**
+     * The equality check should not take case into consideration.
+     */
+    @Test
+    public void removeAnyKeyMatchingValue_MatchingValueFound_CaseInsensitive() {
+        String query = "key4=ALL%20SORTED%202%20-%2099.6-12&key2=ValueA&key3=ALL%20SORTED%202%20-%2099.6-12&key2=ValueA&key4=ValueA&key2=ALL%20SORTED%202%20-%2099.6-12";
+        String expected = "key2=ValueA&key2=ValueA&key4=ValueA";
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "aLL sOrTed 2 - 99.6-12");
+        assertThat(result).isEqualTo(expected);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
 }

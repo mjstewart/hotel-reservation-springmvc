@@ -55,6 +55,80 @@ public class AddTest {
     }
 
     /**
+     * If the key is empty it should have no effect and return the original query string.
+     */
+    @Test
+    public void add_HandlesEmptyKey() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.add(mockHttpRequest, "", "valueX");
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * If the key is empty it should have no effect and return the original query string.
+     * This test checks to make sure white space is trimmed in the empty check.
+     */
+    @Test
+    public void add_HandlesEmptyKey_Trim() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.add(mockHttpRequest, "      ", "valueX");
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * If the value is empty it should have no effect and return the original query string.
+     */
+    @Test
+    public void add_HandlesEmptyValue() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.add(mockHttpRequest, "key10", "");
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * If the value is empty it should have no effect and return the original query string.
+     * This test checks to make sure white space is trimmed in the empty check.
+     */
+    @Test
+    public void add_HandlesEmptyValue_Trim() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.add(mockHttpRequest, "key10", "          ");
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
      * When a key already exists and is receiving a new value, it should be added to the end only if the value does
      * not exist.
      *
@@ -130,6 +204,94 @@ public class AddTest {
 
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.addAll(mockHttpRequest, null);
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * When a pair has an empty key it should be ignored.
+     */
+    @Test
+    public void addAll_InvalidEmptyKeyInPair_HasNoEffect() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        // Simulate SpEL expression for 2d list.
+        List<List<String>> instructions = new ArrayList<>();
+        instructions.add(new ArrayList<>(Arrays.asList("", "Added2")));
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.addAll(mockHttpRequest, instructions);
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * When a pair has an empty key it should be ignored. Whitespace should be trimmed in empty check.
+     */
+    @Test
+    public void addAll_InvalidEmptyKeyInPair_TrimSpace_HasNoEffect() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        // Simulate SpEL expression for 2d list.
+        List<List<String>> instructions = new ArrayList<>();
+        instructions.add(new ArrayList<>(Arrays.asList("    ", "Added2")));
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.addAll(mockHttpRequest, instructions);
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * When a pair has an empty value it should be ignored.
+     */
+    @Test
+    public void addAll_InvalidEmptyValueInPair_HasNoEffect() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        // Simulate SpEL expression for 2d list.
+        List<List<String>> instructions = new ArrayList<>();
+        instructions.add(new ArrayList<>(Arrays.asList("key4", "")));
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.addAll(mockHttpRequest, instructions);
+        assertThat(result).isEqualTo(query);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * When a pair has an empty value it should be ignored. Whitespace should be trimmed in empty check.
+     */
+    @Test
+    public void addAll_InvalidEmptyValueInPair_TrimSpace_HasNoEffect() {
+        String query = "key4=ValueA&key2=ValueB&key3=ValueC";
+
+        // Simulate SpEL expression for 2d list.
+        List<List<String>> instructions = new ArrayList<>();
+        instructions.add(new ArrayList<>(Arrays.asList("key4", "       ")));
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.addAll(mockHttpRequest, instructions);
         assertThat(result).isEqualTo(query);
 
         verify(mockHttpRequest, times(1)).getQueryString();
@@ -266,6 +428,32 @@ public class AddTest {
         QueryStringHelper helper = new QueryStringHelper();
         String result = helper.addAll(mockHttpRequest, instructions);
         assertThat(result).isEqualTo(expected);
+
+        verify(mockHttpRequest, times(1)).getQueryString();
+        verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    /**
+     * Sanity check to ensure that when the exact same keys and values are added, the original query
+     * string should be returned.
+     */
+    @Test
+    public void addAll_ManyPairsAlreadyExist_ShouldHaveNoEffect() {
+        String query = "key4=ValueA&key2=Value%20B&key3=%20ValueC%20&key4=%20Value%20CC%20";
+
+        // Simulate SpEL expression for 2d list.
+        List<List<String>> instructions = new ArrayList<>();
+        instructions.add(Arrays.asList("key4", "ValueA"));
+        instructions.add(Arrays.asList("key2", "Value B"));
+        instructions.add(Arrays.asList("key3", " ValueC "));
+        instructions.add(Arrays.asList("key4", " Value CC "));
+
+        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
+        when(mockHttpRequest.getQueryString()).thenReturn(query);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.addAll(mockHttpRequest, instructions);
+        assertThat(result).isEqualTo(query);
 
         verify(mockHttpRequest, times(1)).getQueryString();
         verifyNoMoreInteractions(mockHttpRequest);

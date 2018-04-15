@@ -156,10 +156,10 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         // {missing: {0:'new value'}} - the key 'missing' is not in the query string
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(0, "new value");
-        stateChanges.put("missing", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(0, "new value");
+        stateChanges.put("missing", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -208,15 +208,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {4: 'new value'}})}"
          *
          * {key2: {4: 'new value'}} - there are only 3 key2 keys
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(totalKeys + 1, "new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(totalKeys + 1, "new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -241,15 +240,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {-1: 'new value'}})}"
          *
          * {key2: {-1: 'new value'}} - lower bound exceeded
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(-1, "new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(-1, "new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -274,15 +272,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {0: 'aa new value'}})}"
          *
          * {key2: {0: 'new value'}}
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(0, "aa new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(0, "aa new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -307,15 +304,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {1: 'bb new value'}})}"
          *
          * {key2: {1: 'bb new value'}}
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(1, "bb new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(1, "bb new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -340,15 +336,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {2: 'cc new value'}})}"
          *
          * {key2: {2: 'cc new value'}}
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(2, "cc new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(2, "cc new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -373,15 +368,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {3: 'dd new value'}})}"
          *
          * {key2: {3: 'dd new value'}}
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(3, "dd new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(3, "dd new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -406,15 +400,14 @@ public class ReplaceTest {
         QueryStringHelper helper = new QueryStringHelper();
 
         /*
-         * No generics are used since this simulates the expected Spring SpEL expression inserted in the template.
          * th:with="${#qs.replaceNth(#request, {key2: {0: 'a new value'}})}"
          *
          * {key2: {0: 'aa new value'}}
          */
-        Map stateChanges = new HashMap();
-        Map keyValueChanges = new HashMap();
-        keyValueChanges.put(0, "a new value");
-        stateChanges.put("key2", keyValueChanges);
+        Map<String, Map<Integer, String>> stateChanges = new HashMap<>();
+        Map<Integer, String> relativeIndexValueChanges = new HashMap<>();
+        relativeIndexValueChanges.put(0, "a new value");
+        stateChanges.put("key2", relativeIndexValueChanges);
 
         String result = helper.replaceNth(mockHttpRequest, stateChanges);
 
@@ -436,7 +429,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<Object> values = new ArrayList<>(Arrays.asList("aa1", "bb 2", "cc 3", "dd"));
+        ArrayList<String> values = new ArrayList<>(Arrays.asList("aa1", "bb 2", "cc 3", "dd"));
 
         String result = helper.replaceN(mockHttpRequest, "missing", values);
 
@@ -480,7 +473,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x 1", "x 2", "x3", "x4", "x5", "x6", "x7"));
+        ArrayList<String> values = new ArrayList<>(Arrays.asList("x 1", "x 2", "x3", "x4", "x5", "x6", "x7"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
@@ -504,7 +497,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x 1", "x 2"));
+        ArrayList<String> values = new ArrayList<>(Arrays.asList("x 1", "x 2"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
@@ -527,7 +520,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x1", "x2", "x 3", "x 4"));
+        ArrayList<String> values = new ArrayList<>(Arrays.asList("x1", "x2", "x 3", "x 4"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
@@ -550,7 +543,7 @@ public class ReplaceTest {
 
         QueryStringHelper helper = new QueryStringHelper();
 
-        ArrayList<Object> values = new ArrayList<>(Arrays.asList("x  1", " x 2 ", "x 3", "  x 4"));
+        ArrayList<String> values = new ArrayList<>(Arrays.asList("x  1", " x 2 ", "x 3", "  x 4"));
 
         String result = helper.replaceN(mockHttpRequest, "key2", values);
 
