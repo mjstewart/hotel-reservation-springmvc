@@ -588,36 +588,6 @@ public class SpringHelperTest {
         verifyNoMoreInteractions(mockHttpRequest);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * When there are null arguments, the original query string should be returned.
      */

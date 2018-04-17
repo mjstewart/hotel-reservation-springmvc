@@ -6,7 +6,7 @@
 <body>
 <div layout:fragment="content">
 
-    <h4 th:with="newQueryString=${#qs.adjustFirstNumericValueBy(#request, 'policy', 2)}"
+    <h4 th:with="newQueryString=${#qs.toggleSortDefaultDesc(#request, 'country')}"
         th:text="${newQueryString}"></h4>
 
 </div>

@@ -7,6 +7,7 @@ import org.thymeleaf.expression.Uris;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class QueryStringHelper {
@@ -750,11 +751,11 @@ public class QueryStringHelper {
     /**
      * Functions the same as {@link #adjustNumericValueBy(HttpServletRequest, String, List, int)} except only updates
      * the first occurrence of the numeric key value. This method is provided for convenience to avoid having to provide
-     * the relative index list. To decrement the value supply a negative number.
+     * the relative index list. To decrement the value, supply a negative number.
      *
      * <h3>Explanation</h3>
      * <p>The example shows key {@code 'policy'} having values {@code [10, 20, 30]}. Since this method only updates
-     * index 0 (the first value), adding 2 to the current value will result in 12 as the new value.</p>
+     * index 0 (the first value), adding 2 to the current value at index 0 will result in 12 as the new value.</p>
      *
      * <h3>Given query string</h3>
      *
@@ -776,26 +777,123 @@ public class QueryStringHelper {
      *
      * <p>Supplying null or empty arguments will have no effect.</p>
      *
-     * @param request         The {@code HttpServletRequest}.
-     * @param key             The target key to find the first numeric value for.
-     * @param value           The value to add (for decrementing use a negative number).
+     * @param request The {@code HttpServletRequest}.
+     * @param key     The target key to find the first numeric value for.
+     * @param value   The value to add (for decrementing use a negative number).
      * @return The new query string.
      */
     public String adjustFirstNumericValueBy(HttpServletRequest request, String key, int value) {
         return QueryString.of(request.getQueryString(), uris).adjustNumericValueBy(key, Collections.singletonList(0), value);
     }
 
-    // designed to work with spring mvc paging and sorting repository.
+    /**
+     * Increments the value for key {@code 'page'} by 1 providing the value is numeric otherwise there is no effect.
+     *
+     * <h3>Explanation</h3>
+     * <p>This method is useful when working with spring {@code PagingAndSortingRepository} which uses
+     * the key {@code 'page'} by convention.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     "city=dallas&country=US&sort=country,desc&page=0"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.incrementPage(#request)}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     newQueryString = city=dallas&country=US&sort=country,desc&page=1
+     * </pre>
+     *
+     * @param request The {@code HttpServletRequest}.
+     * @return The new query string.
+     */
     public String incrementPage(HttpServletRequest request) {
         return adjustNumericValueBy(request, "page", Collections.singletonList(0), 1);
     }
 
+    // cant decrement below 0
+
+    /**
+     * Decrements the value for key {@code 'page'} by 1 providing the value is numeric otherwise there is no effect.
+     * The value is not decremented below 0 which eliminates the need to do lower bound checking within the thymeleaf
+     * template itself.
+     *
+     * <h3>Explanation</h3>
+     * <p>This method is useful when working with spring {@code PagingAndSortingRepository} which uses
+     * the key {@code 'page'} by convention.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     "city=dallas&country=US&sort=country,desc&page=1"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.decrementPage(#request)}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     newQueryString = city=dallas&country=US&sort=country,desc&page=0
+     * </pre>
+     *
+     * @param request The {@code HttpServletRequest}.
+     * @return The new query string.
+     */
     public String decrementPage(HttpServletRequest request) {
+        Predicate<Integer> decrementOnlyIfAboveZero = currentValue -> currentValue > 0;
         return QueryString.of(request.getQueryString(), uris)
-                .adjustNumericValueBy("page", Collections.singletonList(0), -1, currentValue -> currentValue > 0);
+                .adjustNumericValueBy("page", Collections.singletonList(0), -1, decrementOnlyIfAboveZero);
     }
 
-
+    /**
+     * Finds a {@code 'sort'} key having a value equal to {@code sortField} which is to be set
+     * to the supplied new {@code sortDirection} of either <b>exactly</b> {@code asc | desc}.
+     *
+     * <h3>Explanation</h3>
+     * <p>This method is useful when working with spring {@code PagingAndSortingRepository} which uses
+     * the key {@code 'sort'} by convention.</p>
+     *
+     * <p>When the sort field has no explicit sort direction, the default direction used or configured by spring is
+     * in effect. The example shows the new sort field always having the new sort direction appended by a comma
+     * which follows the {@code PagingAndSortingRepository} convention.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     "city=dallas&country=US&sort=country&page=1"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.decrementPage(#request)}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     newQueryString = city=dallas&country=US&sort=country,desc&page=1
+     * </pre>
+     *
+     * <p>Supplying null, empty or non existing arguments will have no effect.</p>
+     *
+     * @param request       The {@code HttpServletRequest}.
+     * @param sortField     The sort field to change the sort direction for.
+     * @param sortDirection The new sort direction of either {@code asc | desc}.
+     * @return The new query string.
+     * @throws IllegalArgumentException If provided a {@code sortDirection} which is not either {@code asc | desc}.
+     */
     public String setSortDirection(HttpServletRequest request, String sortField, String sortDirection) {
         if (sortField == null || sortField.isEmpty() || sortDirection == null || sortDirection.isEmpty()) {
             return request.getQueryString();
@@ -810,17 +908,98 @@ public class QueryStringHelper {
                 .setSortDirection(sortField, currentDirection -> direction);
     }
 
-
-    // assumes default ordering is asc
+    /**
+     * Finds a {@code 'sort'} key having a value equal to {@code sortField} which is to have its sort direction toggled
+     * to its opposite. E.g: 'asc' becomes 'desc' and vice versa.
+     *
+     * <h3>Explanation</h3>
+     * <p>An important distinction between this method and {@link #toggleSortDefaultDesc(HttpServletRequest, String)}
+     * is how a {@code sortField} with no explicit sort direction is treated. {@code defaultAsc} means if the
+     * {@code sortField} has no explicit sort direction to then implicitly treat its current sort direction as 'asc'.
+     * The result of calling this method will change the direction to 'desc' in example 1.</p>
+     * <p>Example 2 shows the simple scenario of having an explicit sort direction defined which results in the
+     * opposite direction as the new sort value.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     1. "city=dallas&country=US&sort=country&page=1"
+     *
+     *     2. "city=dallas&country=US&sort=country,desc&page=1"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.toggleSortDefaultAsc(#request, 'country')}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     1. newQueryString = city=dallas&country=US&sort=country,desc&page=1
+     *
+     *     2. newQueryString = city=dallas&country=US&sort=country,asc&page=1
+     * </pre>
+     *
+     * <p>Supplying null, empty or non existing arguments will have no effect.</p>
+     *
+     * @param request   The {@code HttpServletRequest}.
+     * @param sortField The sort field to toggle the sort direction for.
+     * @return The new query string.
+     */
     public String toggleSortDefaultAsc(HttpServletRequest request, String sortField) {
         return QueryString.of(request.getQueryString(), uris).toggleSortDefaultAsc(sortField);
     }
 
+    /**
+     * Finds a {@code 'sort'} key having a value equal to {@code sortField} which is to have its sort direction toggled
+     * to its opposite. E.g: 'asc' becomes 'desc' and vice versa.
+     *
+     * <h3>Explanation</h3>
+     * <p>An important distinction between this method and {@link #toggleSortDefaultAsc(HttpServletRequest, String)}
+     * is how a {@code sortField} with no explicit sort direction is treated. {@code defaultDesc} means if the
+     * {@code sortField} has no explicit sort direction to then implicitly treat its current sort direction as 'desc'.
+     * The result of calling this method will change the direction to 'asc' in example 1.</p>
+     * <p>Example 2 shows the simple scenario of having an explicit sort direction defined which results in the
+     * opposite direction as the new sort value.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     1. "city=dallas&country=US&sort=country&page=1"
+     *
+     *     2. "city=dallas&country=US&sort=country,asc&page=1"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.toggleSortDefaultDesc(#request, 'country')}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     1. newQueryString = city=dallas&country=US&sort=country,asc&page=1
+     *
+     *     2. newQueryString = city=dallas&country=US&sort=country,desc&page=1
+     * </pre>
+     *
+     * <p>Supplying null, empty or non existing arguments will have no effect.</p>
+     *
+     * @param request   The {@code HttpServletRequest}.
+     * @param sortField The sort field to toggle the sort direction for.
+     * @return The new query string.
+     */
     public String toggleSortDefaultDesc(HttpServletRequest request, String sortField) {
         return QueryString.of(request.getQueryString(), uris).toggleSortDefaultDesc(sortField);
     }
 
-
+    public String url(HttpServletRequest request, String queryString) {
+        return (queryString != null && !queryString.isEmpty()) ?
+                request.getRequestURI() + "?" + queryString : request.getRequestURI();
+    }
 
     /*
        also have variants of the same method that just take in a #request and call getQueryString for shorthand.

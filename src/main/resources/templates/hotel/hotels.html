@@ -53,21 +53,10 @@
             <tfoot th:with="url=|${#request.getRequestURI()}?${#request.getQueryString()}|,
                     pageNumber=${results.getPageable().getPageNumber()}">
 
+            <!--motivation for why my extension is good!-->
+            <!--need to extract every key/value and rebuild query string. hassle if you dont know every key or a very large query string-->
+            <!--@{${#request.getRequestURI()}(page=${pageNumber - 1},${#request.getQueryString()})}-->
             <tr>
-
-                <!--<p th:text="|getTotalPages ${results.getTotalPages()}|"></p>-->
-                <!--<p th:text="|getTotalElements ${results.getTotalElements()}|"></p>-->
-                <!--<p th:text="|getPageNumber ${results.getPageable().getPageNumber()}|"></p>-->
-                <!--<p th:text="|getPageSize ${results.getPageable().getPageSize()}|"></p>-->
-                <!--<p th:text="|hasPrevious ${results.getPageable().hasPrevious()}|"></p>-->
-
-
-                <h3 th:with="newQueryString=${#qs.replaceFirst(#request, 'sort', 'country,state')}"
-                    th:text="${newQueryString}"></h3>
-
-                <h3 th:with="newQueryString=${#qs.replaceNth(#request, {region: { 1: 'Auckland', 2: 'AUKL' }})}"
-                    th:text="${newQueryString}"></h3>
-
                 <th colspan="6">
                     <span class="margin-right-10"
                           th:text="|${pageNumber + 1} of ${results.getTotalPages()}|"></span>
@@ -79,17 +68,15 @@
                         </a>
                         <a class="icon item"
                            th:if="${results.getPageable().hasPrevious()}"
-                           th:href="@{${#request.getRequestURI()}(page=${pageNumber - 1},${#request.getQueryString()})}">
+                            >
                             <i class="left chevron icon"></i>
                         </a>
                         <a class="icon item"
                            th:if="${pageNumber < results.getTotalPages()}"
-                           th:with="currPage=|page=${pageNumber}|,nextPage=|page=${currPage + 1}|,q=${#request.getQueryString()},
-                           newQuery=${#strings.replace(q,currPage, nextPage)}"
-                           th:href="@{${#request.getRequestURI()}(${newQuery})}">
-                            <!--<h1 th:with="${#querystring.rplace({sort:{0:'stars,asc'}})}"></h1>-->
+                           th:with="a=${#qs.url(#request, #qs.incrementPage(#request))}"
+                           th:href="${#qs.url(#request., #qs.incrementPage(#request))}">
                             <i class="right chevron icon"></i>
-                            <p></p>
+                            <p th:text="${newQueryString}"></p>
                         </a>
                         <a class="icon item"
                            th:if="${pageNumber < results.getTotalPages()}"
