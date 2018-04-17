@@ -6,7 +6,7 @@
 <body>
 <div layout:fragment="content">
 
-    <h4 th:with="newQueryString=${#qs.removeAndAdd(#request, {'postcode', 'sort'}, {{'sort', 'city,desc'}})}"
+    <h4 th:with="newQueryString=${#qs.adjustFirstNumericValueBy(#request, 'policy', 2)}"
         th:text="${newQueryString}"></h4>
 
 </div>

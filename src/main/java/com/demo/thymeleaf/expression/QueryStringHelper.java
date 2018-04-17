@@ -638,8 +638,48 @@ public class QueryStringHelper {
         return QueryString.of(afterRemovalQueryString, uris).addAll(addKeyValuePairs);
     }
 
+    /**
+     * Convenience method to perform a {@link #removeNth(HttpServletRequest, String, int)} on many unique keys while
+     * maintaining the original query strings ordering. After the removal, the list of key value pairs are added to
+     * the end of the query string.
+     *
+     * <h3>Explanation</h3>
+     * <p>The example shows key {@code 'sort'} having values {@code ['country,asc', 'city,desc']} and key {@code 'region'}
+     * with values {@code ['north, 'upper', 'border']}.</p>
+     *
+     * <p>The removal step has the effect of deleting {@code sort[0]} and {@code region[1], region[2]}. After the removal,
+     * 2 new key value pairs are added to the end of the query string.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     "sort=country,asc&sort=city,desc&location=AU&region=north&region=upper&region=border"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.removeNthAndAdd(#request, {'sort': {0}, 'region': {1, 2}}, {{'postcode', '39481'}, {'locale', 'AU'}})}"
+     * </pre>
+     * *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     newQueryString = sort=city,desc&location=AU&region=north&postcode=39481&locale=AU
+     * </pre>
+     *
+     * <p>Supplying null or empty arguments will have no effect.</p>
+     *
+     * <p><b>Note:</b> The syntax for the {@code removeInstructions} and {@code addKeyValuePairs} must be exactly as
+     * the example shows, otherwise there will be casting errors.</p>
+     *
+     * @param request            The {@code HttpServletRequest}.
+     * @param removeInstructions The keys and corresponding relative value indexes to remove.
+     * @param addKeyValuePairs   The new key value pairs to add to the end of the query string.
+     * @return The new query string.
+     */
     public String removeNthAndAdd(HttpServletRequest request,
-                                  Map<Object, List<Object>> removeInstructions,
+                                  Map<String, List<Integer>> removeInstructions,
                                   List<List<String>> addKeyValuePairs) {
         if (removeInstructions == null || addKeyValuePairs == null) {
             return request.getQueryString();
@@ -647,17 +687,9 @@ public class QueryStringHelper {
 
         // The reduction applies the removal action for each key
         String afterRemovalQueryString = removeInstructions.entrySet().stream()
-                .reduce(request.getQueryString(), (queryString, entry) -> {
-                    String key = (String) entry.getKey();
-
-                    // casting...
-                    List<Integer> relativeIndexes = entry.getValue().stream()
-                            .map(index -> Integer.parseInt((String) index))
-                            .collect(Collectors.toList());
-
-                    return QueryString.of(queryString, uris).removeManyNth(key, relativeIndexes);
-                }, (a, b) -> a + "&" + b);
-
+                .reduce(request.getQueryString(), (queryString, entry) ->
+                        QueryString.of(queryString, uris)
+                                .removeManyNth(entry.getKey(), entry.getValue()), (a, b) -> a + "&" + b);
 
         try {
             QueryString queryString = QueryString.of(afterRemovalQueryString, uris);
@@ -673,16 +705,89 @@ public class QueryStringHelper {
         }
     }
 
-    public String adjustNumericValueBy(HttpServletRequest request, String key, List<Object> relativeIndexes, int value) {
-        List<Integer> castedIndexes = relativeIndexes.stream()
-                .map(obj -> Integer.parseInt((String) obj))
-                .collect(Collectors.toList());
-        return QueryString.of(request.getQueryString(), uris).adjustNumericValueBy(key, castedIndexes, value);
+    /**
+     * Adds the supplied value to a range of numerical key values defined by relative index. Decrementing a value can be
+     * achieved by supplying a negative number.
+     *
+     * <h3>Explanation</h3>
+     * <p>The example shows key {@code 'policy'} having values {@code [10, 20, 30]}. Lets assume we want to add 5 to only
+     * the values at index 1 and 2. The result is the last 2 values being incremented by 5 while the first value remains
+     * unchanged at 10.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     "policy=10&sort=country&policy=20&location=AU&border=north&policy=30"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.adjustNumericValueBy(#request, 'policy', {1, 2}, 5)}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     newQueryString = policy=10&sort=country&policy=25&location=AU&border=north&policy=35
+     * </pre>
+     *
+     * <p>Supplying null or empty arguments will have no effect.</p>
+     *
+     * <p><b>Note:</b> The syntax for the {@code relativeIndexes} must be exactly as the example shows,
+     * otherwise there will be casting errors.</p>
+     *
+     * @param request         The {@code HttpServletRequest}.
+     * @param key             The target key to find numeric values for.
+     * @param relativeIndexes Which indexes to add the value to.
+     * @param value           The value to add (for decrementing use a negative number).
+     * @return The new query string.
+     */
+    public String adjustNumericValueBy(HttpServletRequest request, String key, List<Integer> relativeIndexes, int value) {
+        return QueryString.of(request.getQueryString(), uris).adjustNumericValueBy(key, relativeIndexes, value);
+    }
+
+    /**
+     * Functions the same as {@link #adjustNumericValueBy(HttpServletRequest, String, List, int)} except only updates
+     * the first occurrence of the numeric key value. This method is provided for convenience to avoid having to provide
+     * the relative index list. To decrement the value supply a negative number.
+     *
+     * <h3>Explanation</h3>
+     * <p>The example shows key {@code 'policy'} having values {@code [10, 20, 30]}. Since this method only updates
+     * index 0 (the first value), adding 2 to the current value will result in 12 as the new value.</p>
+     *
+     * <h3>Given query string</h3>
+     *
+     * <pre>
+     *     "policy=10&sort=country&policy=20&location=AU&border=north&policy=30"
+     * </pre>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *     th:with="newQueryString=${#qs.adjustFirstNumericValueBy(#request, 'policy', 2)}"
+     * </pre>
+     *
+     * <h3>Result</h3>
+     *
+     * <pre>
+     *     newQueryString = policy=12&sort=country&policy=20&location=AU&border=north&policy=30
+     * </pre>
+     *
+     * <p>Supplying null or empty arguments will have no effect.</p>
+     *
+     * @param request         The {@code HttpServletRequest}.
+     * @param key             The target key to find the first numeric value for.
+     * @param value           The value to add (for decrementing use a negative number).
+     * @return The new query string.
+     */
+    public String adjustFirstNumericValueBy(HttpServletRequest request, String key, int value) {
+        return QueryString.of(request.getQueryString(), uris).adjustNumericValueBy(key, Collections.singletonList(0), value);
     }
 
     // designed to work with spring mvc paging and sorting repository.
     public String incrementPage(HttpServletRequest request) {
-        return adjustNumericValueBy(request, "page", Collections.singletonList("0"), 1);
+        return adjustNumericValueBy(request, "page", Collections.singletonList(0), 1);
     }
 
     public String decrementPage(HttpServletRequest request) {
@@ -691,38 +796,31 @@ public class QueryStringHelper {
     }
 
 
-    public String setSortDirection(HttpServletRequest request, String sortField, SortDirection sortDirection) {
-        return QueryString.of(request.getQueryString(), uris).setSortDirection(sortField,
-                currentDirection -> sortDirection);
+    public String setSortDirection(HttpServletRequest request, String sortField, String sortDirection) {
+        if (sortField == null || sortField.isEmpty() || sortDirection == null || sortDirection.isEmpty()) {
+            return request.getQueryString();
+        }
+
+        SortDirection direction = SortDirection.from(sortDirection);
+        if (direction == SortDirection.NONE) {
+            throw new IllegalArgumentException("Invalid sort direction '" + sortDirection + "', expect either 'asc' or 'desc'");
+        }
+
+        return QueryString.of(request.getQueryString(), uris)
+                .setSortDirection(sortField, currentDirection -> direction);
     }
 
 
     // assumes default ordering is asc
     public String toggleSortDefaultAsc(HttpServletRequest request, String sortField) {
-        return "";
-//        return QueryString.of(request.getQueryString(), uris).toggleSortDirection("sort", sortField);
+        return QueryString.of(request.getQueryString(), uris).toggleSortDefaultAsc(sortField);
     }
 
-//    public String toggleSortDefaultDesc(HttpServletRequest request, String sortField) {
-//        return QueryString.of(request.getQueryString(), uris).toggleSortDirection("sort", sortField);
-//    }
+    public String toggleSortDefaultDesc(HttpServletRequest request, String sortField) {
+        return QueryString.of(request.getQueryString(), uris).toggleSortDefaultDesc(sortField);
+    }
 
-    // specific
-//    public String toggleSortDirectionDefaultDesc(HttpServletRequest request, String sortField, String defaultOrdering) {
-//        return QueryString.of(request.getQueryString(), uris).toggleSortDirection("sort", sortField, defaultOrdering);
-//    }
 
-//    public String setSortDirectionAsc(HttpServletRequest request, String key) {
-//
-//    }
-//
-//    public String setSortDirectionDesc(HttpServletRequest request, String key) {
-//
-//    }
-//
-//    public String setSortDirectionDesc(HttpServletRequest request, String key, String direction) {
-//
-//    }
 
     /*
        also have variants of the same method that just take in a #request and call getQueryString for shorthand.

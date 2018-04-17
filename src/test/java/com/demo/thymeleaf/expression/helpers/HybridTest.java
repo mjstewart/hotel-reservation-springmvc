@@ -208,7 +208,7 @@ public class HybridTest {
         HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
-        Map<Object, List<Object>> removeInstructions = new HashMap<>();
+        Map<String, List<Integer>> removeInstructions = new HashMap<>();
         List<List<String>> addKeyValuePairs = new ArrayList<>();
 
         QueryStringHelper helper = new QueryStringHelper();
@@ -235,8 +235,8 @@ public class HybridTest {
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
         // simulates spel expression
-        Map<Object, List<Object>> removeInstructions = new HashMap<>();
-        removeInstructions.put("key2", Collections.singletonList("2"));
+        Map<String, List<Integer>> removeInstructions = new HashMap<>();
+        removeInstructions.put("key2", Collections.singletonList(2));
 
         List<List<String>> addKeyValuePairs = new ArrayList<>();
         addKeyValuePairs.add(Arrays.asList("key100", "New Value"));
@@ -263,8 +263,8 @@ public class HybridTest {
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
         // simulates spel expression
-        Map<Object, List<Object>> removeInstructions = new HashMap<>();
-        removeInstructions.put("key2", Arrays.asList("-1", "4", "-100", "549"));
+        Map<String, List<Integer>> removeInstructions = new HashMap<>();
+        removeInstructions.put("key2", Arrays.asList(-1, 4, -100, 549));
 
         List<List<String>> addKeyValuePairs = new ArrayList<>();
         addKeyValuePairs.add(Arrays.asList("key100", " New Value "));
@@ -291,11 +291,11 @@ public class HybridTest {
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
         // simulates spel expression
-        Map<Object, List<Object>> removeInstructions = new HashMap<>();
+        Map<String, List<Integer>> removeInstructions = new HashMap<>();
         // Remove values for key2 at relative index 0 and 3
-        removeInstructions.put("key2", Arrays.asList("0", "3"));
+        removeInstructions.put("key2", Arrays.asList(0, 3));
         // Remove values for key2 at relative index 1 and 2
-        removeInstructions.put("key4", Arrays.asList("1", "2"));
+        removeInstructions.put("key4", Arrays.asList(1, 2));
 
         List<List<String>> addKeyValuePairs = new ArrayList<>();
         addKeyValuePairs.add(Arrays.asList("key100", "New Value"));
@@ -328,11 +328,11 @@ public class HybridTest {
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
         // simulates spel expression
-        Map<Object, List<Object>> removeInstructions = new HashMap<>();
-        removeInstructions.put("key2", Arrays.asList("0", "1", "2", "3", "4", "-1"));
-        removeInstructions.put("key4", Arrays.asList("0", "1", "2", "3", "4", "-1"));
-        removeInstructions.put("key3", Arrays.asList("0", "1", "2", "-1"));
-        removeInstructions.put("key9", Arrays.asList("0", "1", "-1"));
+        Map<String, List<Integer>> removeInstructions = new HashMap<>();
+        removeInstructions.put("key2", Arrays.asList(0, 1, 2, 3, 4, -1));
+        removeInstructions.put("key4", Arrays.asList(0, 1, 2, 3, 4, -1));
+        removeInstructions.put("key3", Arrays.asList(0, 1, 2, -1));
+        removeInstructions.put("key9", Arrays.asList(0, 1, -1));
 
         List<List<String>> addKeyValuePairs = new ArrayList<>();
 
@@ -360,11 +360,11 @@ public class HybridTest {
         when(mockHttpRequest.getQueryString()).thenReturn(query);
 
         // simulates spel expression
-        Map<Object, List<Object>> removeInstructions = new HashMap<>();
-        removeInstructions.put("key2", Arrays.asList("0", "1", "2", "3", "4", "-1"));
-        removeInstructions.put("key4", Arrays.asList("0", "1", "2", "3", "4", "-1"));
-        removeInstructions.put("key3", Arrays.asList("0", "1", "2", "-1"));
-        removeInstructions.put("key9", Arrays.asList("0", "1", "-1"));
+        Map<String, List<Integer>> removeInstructions = new HashMap<>();
+        removeInstructions.put("key2", Arrays.asList(0, 1, 2, 3, 4, -1));
+        removeInstructions.put("key4", Arrays.asList(0, 1, 2, 3, 4, -1));
+        removeInstructions.put("key3", Arrays.asList(0, 1, 2, -1));
+        removeInstructions.put("key9", Arrays.asList(0, 1, -1));
 
         List<List<String>> addKeyValuePairs = new ArrayList<>();
         addKeyValuePairs.add(Arrays.asList("key500", "Key 500 Value"));

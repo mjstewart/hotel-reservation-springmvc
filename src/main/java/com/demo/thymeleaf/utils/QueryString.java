@@ -325,15 +325,33 @@ public class QueryString {
         }
     }
 
+    /**
+     * @param key
+     * @param relativeIndexes
+     * @param value
+     * @return
+     */
     public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value) {
         return adjustNumericValueBy(key, relativeIndexes, value, currentValue -> true);
     }
 
-    public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value, Predicate<Integer> p) {
+    /**
+     * The values are retrieved for the given key and if the value is numeric it will have the {@code value} added to it
+     * only if the supplied {@code predicate} is true. The {@code predicate} is passed in the current value allowing
+     * a decision to be made which is useful for preventing a number going beyond or below a threshold.
+     *
+     * @param key             The target key.
+     * @param relativeIndexes The list of indexes.
+     * @param value           The value to add to the existing value.
+     * @param predicate       Gets passed on the current value and if true permits the {@code value} being added to the current
+     *                        value.
+     * @return The new query string.
+     */
+    public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value, Predicate<Integer> predicate) {
         applyToKeyValues(key, relativeIndexes, kvi -> {
             try {
                 int parsedInt = Integer.parseInt(kvi.keyValue.value);
-                if (p.test(parsedInt)) {
+                if (predicate.test(parsedInt)) {
                     kvi.keyValue.value = Integer.toString(parsedInt + value);
                 }
             } catch (NumberFormatException e) {
@@ -492,13 +510,39 @@ public class QueryString {
     }
 
 
+    /**
+     * Toggles the supplied {@code sortField} between ascending or descending.
+     * If there is no current sort direction defined, the default 'ascending' direction determines the next direction
+     * to be 'descending'.
+     *
+     * @param sortField The field to sort.
+     * @return The new query string.
+     */
     public String toggleSortDefaultAsc(String sortField) {
-        // need to know default sort direction... what happens when there is no sort direction, which way to toggle?
-
-        setSortDirection(sortField, currentDirection -> currentDirection.toggle(SortDirection.ASC));
-        return "";
+        return setSortDirection(sortField, currentDirection -> currentDirection.toggle(SortDirection.ASC));
     }
 
+    /**
+     * Toggles the supplied {@code sortField} between ascending or descending.
+     * If there is no current sort direction defined, the default 'descending' direction determines the next direction
+     * to  be'ascending'.
+     *
+     * @param sortField The field to sort.
+     * @return The new query string.
+     */
+    public String toggleSortDefaultDesc(String sortField) {
+        return setSortDirection(sortField, currentDirection -> currentDirection.toggle(SortDirection.DESC));
+    }
+
+    /**
+     * By spring convention uses the key {@code 'sort'} to locate the supplied {@code sortField}.
+     * If the {@code sortField} is found then new sort direction is changed to the result of applying
+     * the {@code sortDirectionMapper} function.
+     *
+     * @param sortField           The field to sort.
+     * @param sortDirectionMapper Function that accepts the current sort direction and returns the new sort direction.
+     * @return The new query string.
+     */
     public String setSortDirection(String sortField, Function<SortDirection, SortDirection> sortDirectionMapper) {
         if (sortField == null) {
             return reconstructQueryString();
@@ -529,7 +573,7 @@ public class QueryString {
                 SortDirection currentOrder = sortTokens.length == 2 ? SortDirection.from(sortTokens[1].trim()) : SortDirection.NONE;
                 SortDirection newSortDirection = sortDirectionMapper.apply(currentOrder);
                 String newSortValue = newSortDirection.withSortField(sortTokens[0].trim());
-                indices.set(foundIndex, indices.get(foundIndex).updateValue(newSortValue);
+                indices.set(foundIndex, indices.get(foundIndex).updateValue(newSortValue));
             }
         }
 
