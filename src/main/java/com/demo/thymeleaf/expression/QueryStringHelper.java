@@ -748,6 +748,10 @@ public class QueryStringHelper {
         return QueryString.of(request.getQueryString(), uris).adjustNumericValueBy(key, relativeIndexes, value);
     }
 
+    public String adjustNumericValueByTest(String qs, String key, List<Integer> relativeIndexes, int value) {
+        return QueryString.of(qs, uris).adjustNumericValueBy(key, relativeIndexes, value);
+    }
+
     /**
      * Functions the same as {@link #adjustNumericValueBy(HttpServletRequest, String, List, int)} except only updates
      * the first occurrence of the numeric key value. This method is provided for convenience to avoid having to provide
@@ -818,7 +822,9 @@ public class QueryStringHelper {
         return adjustNumericValueBy(request, "page", Collections.singletonList(0), 1);
     }
 
-    // cant decrement below 0
+    public String incrementPageTest(String qs) {
+        return adjustNumericValueByTest(qs, "page", Collections.singletonList(0), 1);
+    }
 
     /**
      * Decrements the value for key {@code 'page'} by 1 providing the value is numeric otherwise there is no effect.
@@ -996,9 +1002,39 @@ public class QueryStringHelper {
         return QueryString.of(request.getQueryString(), uris).toggleSortDefaultDesc(sortField);
     }
 
-    public String url(HttpServletRequest request, String queryString) {
-        return (queryString != null && !queryString.isEmpty()) ?
-                request.getRequestURI() + "?" + queryString : request.getRequestURI();
+    /**
+     * Concatenates the request uri with the query string should it exist.
+     *
+     * <h3>Explanation</h3>
+     * <p>The motivation for this method is to provide a solution for restrictions preventing methods receiving
+     * the {@code HttpServletRequest} directly via the {@code #request} object in Thymeleaf 3.0.9
+     * http://forum.thymeleaf.org/Thymeleaf-3-0-9-JUST-PUBLISHED-td4030728.html.</p>
+     *
+     * <p>Since each method cannot accept a {@code #request}, its recommended to assign the query string to a new
+     * variable before proceeding to rebuild the complete URI. </p>
+     *
+     * <h3>Thymeleaf usage</h3>
+     *
+     * <pre>
+     *
+     *     th:with="newQueryString=${#qs.incrementPage(#request.getQueryString())}"
+     *     th:href="${#qs.url(#request.getRequestURI(), newQueryString)}"
+     *
+     * </pre>
+     *
+     * <p>Supplying a null or empty {@code requestURI} throws an IllegalArgumentException. If
+     * the {@code queryString} is present it will be concatenated to the {@code requestURI}.</p>
+     *
+     * @param requestURI  The result of calling {#request.getRequestURI()}.
+     * @param queryString The result of calling {#request.getQueryString()}.
+     * @return The new query string.
+     */
+    public String url(String requestURI, String queryString) {
+        if (requestURI == null || requestURI.isEmpty()) {
+            throw new IllegalArgumentException("request URI cannot be null or empty");
+        }
+
+        return (queryString != null && !queryString.isEmpty()) ? requestURI + "?" + queryString : requestURI;
     }
 
     /*

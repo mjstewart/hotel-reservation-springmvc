@@ -1,17 +1,10 @@
 package com.demo.thymeleaf.utils;
 
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.context.IExpressionContext;
 import org.thymeleaf.standard.expression.IStandardExpression;
 import org.thymeleaf.standard.expression.IStandardExpressionParser;
 import org.thymeleaf.standard.expression.StandardExpressions;
-
-import java.lang.reflect.ParameterizedType;
-import java.util.List;
 
 public class ThymeleafExpressionParser {
     private final IExpressionContext context;

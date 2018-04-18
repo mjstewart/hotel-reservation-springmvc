@@ -270,7 +270,7 @@ public class SpringHelperTest {
     /**
      * When the existing field already has a direction, the new value should consist of the existing sort field and
      * new sort direction separated by a comma. {@code sort=country,desc}
-     *
+     * <p>
      * This test checks that white space should be ignored. {@code sort= country   ,   asc) should be treated
      * the same as {@code sort=country,asc}.
      */
@@ -293,7 +293,7 @@ public class SpringHelperTest {
     /**
      * When the existing field has a direction, the new value should have the sort direction appended
      * with a comma. sort=country,desc.
-     *
+     * <p>
      * This test checks that irregular formatting should not matter such as having a trailing comma.
      * {@code sort=country,} should isolate 'country' directly.
      */
@@ -529,7 +529,7 @@ public class SpringHelperTest {
     /**
      * This test checks that irregular formatting should not matter such as having a trailing comma.
      * {@code sort=country,} should isolate 'country' directly.
-     *
+     * <p>
      * In this case since there is still a comma with no direction after it, the default direction 'asc'
      * means that 'desc' is the new direction.
      */
@@ -726,7 +726,7 @@ public class SpringHelperTest {
     /**
      * This test checks that irregular formatting should not matter such as having a trailing comma.
      * {@code sort=country,} should isolate 'country' directly.
-     *
+     * <p>
      * In this case since there is still a comma with no direction after it, the default direction 'desc'
      * means that 'asc' is the new direction.
      */
@@ -783,5 +783,59 @@ public class SpringHelperTest {
 
         verify(mockHttpRequest, times(1)).getQueryString();
         verifyNoMoreInteractions(mockHttpRequest);
+    }
+
+    @Test
+    public void url_WhenNullRequestURI_ThrowException() {
+        QueryStringHelper helper = new QueryStringHelper();
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> helper.url(null, "location=europe"));
+    }
+
+    @Test
+    public void url_WhenEmptyRequestURI_ThrowException() {
+        QueryStringHelper helper = new QueryStringHelper();
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> helper.url("", "location=europe"));
+    }
+
+    /**
+     * When only the request uri is given and the query string is null, return only the request uri.
+     */
+    @Test
+    public void url_UriAndNullQueryString_ReturnUriOnly() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.url("/home/main", null);
+
+        String expect = "/home/main";
+
+        assertThat(result).isEqualTo(expect);
+    }
+
+    /**
+     * When only the request uri is given and the query string is empty, return only the request uri.
+     */
+    @Test
+    public void url_UriAndEmptyQueryString_ReturnUriOnly() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.url("/home/main", "");
+
+        String expect = "/home/main";
+
+        assertThat(result).isEqualTo(expect);
+    }
+
+    /**
+     * When both the request uri and query string exist, they should be concatenated
+     * together with a {@code ?}.
+     */
+    @Test
+    public void url_UriAndQueryStringExist_ReturnConcatenation() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.url("/home/main", "locale=eu&location=europe");
+
+        String expect = "/home/main?locale=eu&location=europe";
+
+        assertThat(result).isEqualTo(expect);
     }
 }

@@ -67,16 +67,14 @@
                             <i class="angle double left icon"></i>
                         </a>
                         <a class="icon item"
-                           th:if="${results.getPageable().hasPrevious()}"
-                            >
+                           th:if="${results.getPageable().hasPrevious()}">
                             <i class="left chevron icon"></i>
                         </a>
                         <a class="icon item"
                            th:if="${pageNumber < results.getTotalPages()}"
-                           th:with="a=${#qs.url(#request, #qs.incrementPage(#request))}"
-                           th:href="${#qs.url(#request., #qs.incrementPage(#request))}">
+                           th:with="newQueryString=${#qs.incrementPageTest(#request.getQueryString())}"
+                           th:href="${#qs.url(#request.getRequestURI(), newQueryString)}">
                             <i class="right chevron icon"></i>
-                            <p th:text="${newQueryString}"></p>
                         </a>
                         <a class="icon item"
                            th:if="${pageNumber < results.getTotalPages()}"
@@ -88,6 +86,11 @@
             </tr>
             </tfoot>
         </table>
+
+        <h2 th:with="newQueryString=${#qs.incrementPageTest(#request.getQueryString())},
+                     newUrl=${#qs.url(#request.getRequestURI(), newQueryString)}"
+            th:text="${#qs.url(#request.getRequestURI(), newQueryString)}">
+        </h2>
     </div>
 </div>
 <th:block layout:fragment="script">
