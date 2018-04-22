@@ -27,7 +27,8 @@ public class QueryString {
     private Map<String, List<KeyValueIndex>> state;
 
     private QueryString(String originalQueryString, Uris uris) {
-        this.originalQueryString = uris.unescapeQueryParam(originalQueryString);
+        // eliminates having to do null checks
+        this.originalQueryString = originalQueryString == null ? "" : uris.unescapeQueryParam(originalQueryString);
         this.uris = uris;
         state = createState();
     }
@@ -38,12 +39,8 @@ public class QueryString {
      * @param queryString The query string with at least 1 key=value pair.
      * @param uris        Handles escaping/unescaping the string
      * @return A valid instance
-     * @throws IllegalArgumentException If there is not at least 1 key=value pair.
      */
-    public static QueryString of(String queryString, Uris uris) throws IllegalArgumentException {
-        if (!hasAtLeastOneKeyValuePair(queryString)) {
-            throw new IllegalArgumentException("Query string must have at least key=value pair");
-        }
+    public static QueryString of(String queryString, Uris uris) {
         // unescape every percent-encoded (%HH) sequences present in input to avoid re escaping.
         return new QueryString(queryString, uris);
     }
@@ -55,22 +52,6 @@ public class QueryString {
         String[] tokens = pair.split("=");
         // Need to handle edge case where if you split '=value', index 0 is an empty string.
         return tokens.length == 2 && !tokens[0].isEmpty();
-    }
-
-    /**
-     * Validate initial query string prior to constructing instance.
-     */
-    private static boolean hasAtLeastOneKeyValuePair(String queryString) {
-        if (queryString == null) {
-            return false;
-        }
-
-        String[] multiplePairs = queryString.split("&");
-        if (multiplePairs.length == 0) {
-            // query string may only be a single key=value
-            return isValidPair(queryString);
-        }
-        return Arrays.stream(multiplePairs).allMatch(QueryString::isValidPair);
     }
 
     /**
@@ -103,7 +84,7 @@ public class QueryString {
      *
      * @param key   The target key.
      * @param value The new value.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String replaceFirst(String key, String value) {
         if (key == null || value == null) {
@@ -121,9 +102,13 @@ public class QueryString {
      *
      * @param key    The target key.
      * @param values The replacement values corresponding to the relative value indexes for the target key.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String replaceN(String key, List<String> values) {
+        if (key == null || values == null) {
+            return originalQueryString;
+        }
+
         List<KeyValueIndex> indices = state.get(key);
         if (indices != null) {
             for (int i = 0; i < indices.size() && i < values.size(); i++) {
@@ -169,10 +154,10 @@ public class QueryString {
      * </ol>
      *
      * @param stateChangeInstructions The map of instructions produced by the SpEL expression.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String replaceNth(Map<String, Map<Integer, String>> stateChangeInstructions) {
-        if (stateChangeInstructions == null) {
+        if (stateChangeInstructions == null || state.isEmpty()) {
             return reconstructQueryString();
         }
 
@@ -196,12 +181,14 @@ public class QueryString {
      * Removes the first occurrence of the supplied key. If there are no duplicate keys, the entire key will be removed.
      *
      * @param key The target key.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String removeFirst(String key) {
-        List<KeyValueIndex> indices = state.get(key);
-        if (indices != null && !indices.isEmpty()) {
-            indices.get(0).keyValue.delete();
+        if (key != null) {
+            List<KeyValueIndex> indices = state.get(key);
+            if (indices != null && !indices.isEmpty()) {
+                indices.get(0).keyValue.delete();
+            }
         }
         return reconstructQueryString();
     }
@@ -210,7 +197,7 @@ public class QueryString {
      * Removes every key and their associated values.
      *
      * @param keys The target keys.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null, empty or all keys are removed.
      */
     public String removeAll(List<String> keys) {
         if (keys != null) {
@@ -225,14 +212,14 @@ public class QueryString {
      *
      * @param key The target key.
      * @param n   Total occurrences of the key to remove.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String removeN(String key, int n) {
-        List<KeyValueIndex> indices = state.get(key);
-
-        if (n <= 0) {
+        if (key == null || n <= 0) {
             return reconstructQueryString();
         }
+
+        List<KeyValueIndex> indices = state.get(key);
 
         if (indices != null) {
             if (n >= indices.size()) {
@@ -265,12 +252,14 @@ public class QueryString {
      *
      * @param key      The target key.
      * @param nthIndex The relative index to remove.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String removeNth(String key, int nthIndex) {
-        List<KeyValueIndex> indices = state.get(key);
-        if (indices != null && !indices.isEmpty() && nthIndex >= 0 && nthIndex < indices.size()) {
-            indices.get(nthIndex).keyValue.delete();
+        if (key != null) {
+            List<KeyValueIndex> indices = state.get(key);
+            if (indices != null && !indices.isEmpty() && nthIndex >= 0 && nthIndex < indices.size()) {
+                indices.get(nthIndex).keyValue.delete();
+            }
         }
         return reconstructQueryString();
     }
@@ -290,7 +279,7 @@ public class QueryString {
      *
      * @param key             The target key.
      * @param relativeIndexes The relative indexes to remove.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String removeManyNth(String key, List<Integer> relativeIndexes) {
         applyToKeyValues(key, relativeIndexes, kvi -> kvi.keyValue.delete());
@@ -315,21 +304,26 @@ public class QueryString {
      * @param consumer        The side effecting consumer function.
      */
     private void applyToKeyValues(String key, List<Integer> relativeIndexes, Consumer<KeyValueIndex> consumer) {
-        List<KeyValueIndex> indices = state.get(key);
-        if (indices != null && !indices.isEmpty()) {
-            for (int i = 0; i < indices.size(); i++) {
-                if (relativeIndexes.contains(i)) {
-                    consumer.accept(indices.get(i));
+        if (key != null && relativeIndexes != null) {
+            List<KeyValueIndex> indices = state.get(key);
+            if (indices != null && !indices.isEmpty()) {
+                for (int i = 0; i < indices.size(); i++) {
+                    if (relativeIndexes.contains(i)) {
+                        consumer.accept(indices.get(i));
+                    }
                 }
             }
         }
     }
 
     /**
-     * @param key
-     * @param relativeIndexes
-     * @param value
-     * @return
+     * See {@link #adjustNumericValueBy(String, List, int, Predicate)}. This method always returns true for the predicate
+     * meaning the value will be updated regardless.
+     *
+     * @param key             The target key.
+     * @param relativeIndexes The list of indexes.
+     * @param value           The value to add to the existing value.
+     * @return The new query string.
      */
     public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value) {
         return adjustNumericValueBy(key, relativeIndexes, value, currentValue -> true);
@@ -340,12 +334,20 @@ public class QueryString {
      * only if the supplied {@code predicate} is true. The {@code predicate} is passed in the current value allowing
      * a decision to be made which is useful for preventing a number going beyond or below a threshold.
      *
+     * <p>To decrement, the {@code value} is to be negative.</p>
+     *
+     * <p>
+     *
+     * <p>{@code relativeIndexes} are provided for flexibility to update more than 1 value, however if the
+     * {@code page} is being incremented for example, the list will contain 0 which implies
+     * 'only update the first occurrence of the page value'</p>
+     *
      * @param key             The target key.
      * @param relativeIndexes The list of indexes.
      * @param value           The value to add to the existing value.
-     * @param predicate       Gets passed on the current value and if true permits the {@code value} being added to the current
-     *                        value.
-     * @return The new query string.
+     * @param predicate       Gets passed on the current value and if true permits the {@code value} being added
+     *                        to the current value.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String adjustNumericValueBy(String key, List<Integer> relativeIndexes, int value, Predicate<Integer> predicate) {
         applyToKeyValues(key, relativeIndexes, kvi -> {
@@ -362,7 +364,7 @@ public class QueryString {
     }
 
     /**
-     * Removes the target key if its value is equal to the matching value
+     * Removes the target key if its value is equal to the matching value. The equality is case insensitive.
      *
      * <pre>
      *     a=500&b=700&a=700
@@ -372,17 +374,19 @@ public class QueryString {
      *
      * @param key        The target key to delete if the value matches.
      * @param valueMatch The value to match which triggers deletion.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String removeKeyMatchingValue(String key, String valueMatch) {
-        List<KeyValueIndex> indices = state.get(key);
+        if (key != null && valueMatch != null) {
+            List<KeyValueIndex> indices = state.get(key);
 
-        if (indices != null) {
-            List<KeyValueIndex> newIndices = indices.stream()
-                    .filter(kv -> !kv.keyValue.isCaseInsensitiveEqual(valueMatch))
-                    .collect(Collectors.toList());
+            if (indices != null) {
+                List<KeyValueIndex> newIndices = indices.stream()
+                        .filter(kv -> !kv.keyValue.isCaseInsensitiveEqual(valueMatch))
+                        .collect(Collectors.toList());
 
-            state.put(key, newIndices);
+                state.put(key, newIndices);
+            }
         }
 
         return reconstructQueryString();
@@ -399,7 +403,7 @@ public class QueryString {
      * </pre>
      *
      * @param valueMatch The value to match triggering deletion.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String removeAnyKeyMatchingValue(String valueMatch) {
         for (Map.Entry<String, List<KeyValueIndex>> entry : state.entrySet()) {
@@ -425,6 +429,9 @@ public class QueryString {
      * @return The associated value if found otherwise null.
      */
     public String getFirstValue(String key) {
+        if (key == null) {
+            return null;
+        }
         List<KeyValueIndex> indices = state.get(key);
         if (indices == null || indices.isEmpty()) {
             return null;
@@ -445,6 +452,9 @@ public class QueryString {
      * @return The associated values if found otherwise an empty list.
      */
     public List<String> getAllValues(String key) {
+        if (key == null) {
+            return new ArrayList<>();
+        }
         List<KeyValueIndex> indices = state.get(key);
         if (indices == null || indices.isEmpty()) {
             return new ArrayList<>();
@@ -516,7 +526,7 @@ public class QueryString {
      * to be 'descending'.
      *
      * @param sortField The field to sort.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String toggleSortDefaultAsc(String sortField) {
         return setSortDirection(sortField, currentDirection -> currentDirection.toggle(SortDirection.ASC));
@@ -528,7 +538,7 @@ public class QueryString {
      * to  be'ascending'.
      *
      * @param sortField The field to sort.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String toggleSortDefaultDesc(String sortField) {
         return setSortDirection(sortField, currentDirection -> currentDirection.toggle(SortDirection.DESC));
@@ -541,7 +551,7 @@ public class QueryString {
      *
      * @param sortField           The field to sort.
      * @param sortDirectionMapper Function that accepts the current sort direction and returns the new sort direction.
-     * @return The new query string.
+     * @return The new query string or an empty string if the original query string is null or empty.
      */
     public String setSortDirection(String sortField, Function<SortDirection, SortDirection> sortDirectionMapper) {
         if (sortField == null) {
@@ -555,9 +565,9 @@ public class QueryString {
             int foundIndex = -1;
 
             /*
-             * When foundIndex is valid, sortTokens will contain the field and optionally sort order values.
+             * When foundIndex is valid, sortTokens will contain the field and optionally the sort direction.
              * Eg: sort=country,desc or sort=country. This means index 0 will always contain the sort field based
-             * on spring conventions. Sort order is irrelevant given that is what this method is changing.
+             * on spring conventions. Sort direction is irrelevant given that is what this method is changing.
              */
             String[] sortTokens = null;
 
@@ -570,7 +580,9 @@ public class QueryString {
                 }
             }
             if (foundIndex != -1) {
-                SortDirection currentOrder = sortTokens.length == 2 ? SortDirection.from(sortTokens[1].trim()) : SortDirection.NONE;
+                SortDirection currentOrder = sortTokens.length == 2 ?
+                        SortDirection.from(sortTokens[1].trim()) : SortDirection.NONE;
+
                 SortDirection newSortDirection = sortDirectionMapper.apply(currentOrder);
                 String newSortValue = newSortDirection.withSortField(sortTokens[0].trim());
                 indices.set(foundIndex, indices.get(foundIndex).updateValue(newSortValue));
@@ -654,6 +666,9 @@ public class QueryString {
      * @return The state map.
      */
     private Map<String, List<KeyValueIndex>> createState() {
+        if (originalQueryString == null || originalQueryString.isEmpty()) {
+            return new HashMap<>();
+        }
         return Pattern.compile("&").splitAsStream(originalQueryString)
                 .map(KeyValue::fromKeyValue)
                 .filter(Optional::isPresent)

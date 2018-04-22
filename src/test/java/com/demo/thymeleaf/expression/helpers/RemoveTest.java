@@ -3,15 +3,27 @@ package com.demo.thymeleaf.expression.helpers;
 import com.demo.thymeleaf.expression.QueryStringHelper;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
 public class RemoveTest {
+
+    @Test
+    public void removeFirst_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeFirst(null, "missing");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void removeFirst_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeFirst("", "missing");
+        assertThat(result).isEmpty();
+    }
 
     /**
      * When the key is not found, return the original query string.
@@ -20,33 +32,9 @@ public class RemoveTest {
     public void removeFirst_KeyNotFound_HasNoEffect() {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeFirst(mockHttpRequest, "missing");
+        String result = helper.removeFirst(query, "missing");
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the argument is null, return the original query string.
-     */
-    @Test
-    public void removeFirst_HandlesNull_HasNoEffect() {
-        String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeFirst(mockHttpRequest, null);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -60,15 +48,23 @@ public class RemoveTest {
         // The second occurrence still exists.
         String expected = "key4=yy&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeFirst(mockHttpRequest, "key2");
+        String result = helper.removeFirst(query, "key2");
         assertThat(result).isEqualTo(expected);
+    }
 
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
+    @Test
+    public void removeAll_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeAll(null, Arrays.asList("missing"));
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void removeAll_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeAll("", Arrays.asList("missing"));
+        assertThat(result).isEmpty();
     }
 
     /**
@@ -78,33 +74,9 @@ public class RemoveTest {
     public void removeAll_KeyNotFound_HasNoEffect() {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAll(mockHttpRequest, Arrays.asList("missing"));
+        String result = helper.removeAll(query, Arrays.asList("missing"));
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When there is a null argument, return the original query string.
-     */
-    @Test
-    public void removeAll_HandlesNullArg() {
-        String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAll(mockHttpRequest, null);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -114,15 +86,9 @@ public class RemoveTest {
     public void removeAll_HandlesEmptyList_HasNoEffect() {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAll(mockHttpRequest, Arrays.asList());
+        String result = helper.removeAll(query, Arrays.asList());
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -133,15 +99,9 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "key4=yy&key3=value3&key4=value5";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAll(mockHttpRequest, Arrays.asList("key2"));
+        String result = helper.removeAll(query, Arrays.asList("key2"));
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -153,15 +113,9 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "key3=value3";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAll(mockHttpRequest, Arrays.asList("key2", "key4"));
+        String result = helper.removeAll(query, Arrays.asList("key2", "key4"));
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -172,15 +126,23 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAll(mockHttpRequest, Arrays.asList("key2", "key4", "key3"));
+        String result = helper.removeAll(query, Arrays.asList("key2", "key4", "key3"));
         assertThat(result).isEqualTo(expected);
+    }
 
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
+    @Test
+    public void removeN_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeN(null, "missing", 10);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void removeN_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeN("", "missing", 10);
+        assertThat(result).isEmpty();
     }
 
     /**
@@ -190,33 +152,9 @@ public class RemoveTest {
     public void removeN_KeyNotFound_HasNoEffect() {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "missing", 10);
+        String result = helper.removeN(query, "missing", 10);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the key is null, return the original query string.
-     */
-    @Test
-    public void removeN_HandlesNull_HasNoEffect() {
-        String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, null, 10);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -226,15 +164,9 @@ public class RemoveTest {
     public void removeN_NIsZero_HasNoEffect() {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key2", 0);
+        String result = helper.removeN(query, "key2", 0);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -244,15 +176,9 @@ public class RemoveTest {
     public void removeN_NIsNegative_HasNoEffect() {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key2", -1);
+        String result = helper.removeN(query, "key2", -1);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -263,15 +189,9 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key2", 1);
+        String result = helper.removeN(query, "key2", 1);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -282,15 +202,9 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key5=bb";
         String expected = "key2=aa&key5=bb";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key4", 1);
+        String result = helper.removeN(query, "key4", 1);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -302,15 +216,9 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "key4=yy&key3=value3&key4=value5";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key2", 5);
+        String result = helper.removeN(query, "key2", 5);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -322,15 +230,9 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "key4=yy&key3=value3&key4=value5";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key2", 4);
+        String result = helper.removeN(query, "key2", 4);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -342,15 +244,23 @@ public class RemoveTest {
         String query = "key2=aa&key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
         String expected = "key4=yy&key3=value3&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeN(mockHttpRequest, "key2", 3);
+        String result = helper.removeN(query, "key2", 3);
         assertThat(result).isEqualTo(expected);
+    }
 
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
+    @Test
+    public void removeNth_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeNth(null, "missing", 0);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void removeNth_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeNth("", "missing", 0);
+        assertThat(result).isEmpty();
     }
 
     /**
@@ -360,33 +270,9 @@ public class RemoveTest {
     public void removeNth_KeyNotFound_HasNoEffect() {
         String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, "missing", 0);
+        String result = helper.removeNth(query, "missing", 0);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the key is null, return the original query string.
-     */
-    @Test
-    public void removeNth_HandlesNull_HasNoEffect() {
-        String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, null, 0);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -397,15 +283,9 @@ public class RemoveTest {
     public void removeNth_InvalidIndex_LowerBound_HasNoEffect() {
         String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, "key2", -1);
+        String result = helper.removeNth(query, "key2", -1);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -416,15 +296,9 @@ public class RemoveTest {
     public void removeNth_InvalidIndex_UpperBound_HasNoEffect() {
         String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd&key9=abcd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, "key2", 3);
+        String result = helper.removeNth(query, "key2", 3);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -435,15 +309,9 @@ public class RemoveTest {
         String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd&key9=abcd";
         String expected = "key4=yy&key3=value3&key2=cc&key4=value5&key2=dd&key9=abcd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, "key2", 0);
+        String result = helper.removeNth(query, "key2", 0);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -454,15 +322,9 @@ public class RemoveTest {
         String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd&key9=abcd";
         String expected = "key4=yy&key2=bb&key3=value3&key4=value5&key2=dd&key9=abcd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, "key2", 1);
+        String result = helper.removeNth(query, "key2", 1);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -473,33 +335,25 @@ public class RemoveTest {
         String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd&key9=abcd";
         String expected = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key9=abcd";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeNth(mockHttpRequest, "key2", 2);
+        String result = helper.removeNth(query, "key2", 2);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
-    /**
-     * null arguments should return original query string.
-     */
     @Test
-    public void removeManyNth_HandlesNull_HasNoEffect() {
-        String query = "key4=yy&key2=bb&key3=value3&key2=cc&key4=value5&key2=dd&key9=abcd";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
+    public void removeManyNth_QueryStringIsNull_ReturnEmptyString() {
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, null, null);
-        assertThat(result).isEqualTo(query);
+        List<Integer> relativeIndexes = Collections.emptyList();
+        String result = helper.removeManyNth(null, "key2", relativeIndexes);
+        assertThat(result).isEmpty();
+    }
 
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
+    @Test
+    public void removeManyNth_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        List<Integer> relativeIndexes = Collections.emptyList();
+        String result = helper.removeManyNth("", "key2", relativeIndexes);
+        assertThat(result).isEmpty();
     }
 
     /**
@@ -507,19 +361,13 @@ public class RemoveTest {
      */
     @Test
     public void removeManyNth_HandlesEmptyIndexList_HasNoEffect() {
-        String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&&key9=ii";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
+        String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
 
         List<Integer> relativeIndexes = Collections.emptyList();
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
+        String result = helper.removeManyNth(query, "key2", relativeIndexes);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -529,17 +377,11 @@ public class RemoveTest {
     public void removeManyNth_KeyNotFound_HasNoEffect() {
         String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = Arrays.asList(0, 3);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "missing", relativeIndexes);
+        String result = helper.removeManyNth(query, "missing", relativeIndexes);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -550,22 +392,16 @@ public class RemoveTest {
     public void removeManyNth_InvalidIndexes() {
         String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = Arrays.asList(-1, 4, 20);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
+        String result = helper.removeManyNth(query, "key2", relativeIndexes);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
      * Imagine key2 is a list containing the following values. key2 = [aa, dd, ff, hh]
-     *
+     * <p>
      * When removeManyNth is provided every index in the range of keys, all corresponding
      * key value pairs should be removed.
      */
@@ -574,22 +410,16 @@ public class RemoveTest {
         String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
         String expected = "key3=bb&key4=cc&key5=gg&key4=ff&key9=ii";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = Arrays.asList(0, 1, 2, 3);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
+        String result = helper.removeManyNth(query, "key2", relativeIndexes);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
      * Imagine key2 is a list containing the following values. key2 = [aa, dd, ff, hh]
-     *
+     * <p>
      * When removeManyNth is provided every index in the range of keys, all corresponding
      * key value pairs should be removed. The order of indexes to remove should not matter.
      */
@@ -598,17 +428,11 @@ public class RemoveTest {
         String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
         String expected = "key3=bb&key4=cc&key5=gg&key4=ff&key9=ii";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = Arrays.asList(3, 2, 1, 0);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
+        String result = helper.removeManyNth(query, "key2", relativeIndexes);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -621,17 +445,11 @@ public class RemoveTest {
         String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
         String expected = "key2=aa&key3=bb&key4=cc&key5=gg&key4=ff&key2=hh&key9=ii";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = Arrays.asList(1, 2);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
+        String result = helper.removeManyNth(query, "key2", relativeIndexes);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -644,17 +462,25 @@ public class RemoveTest {
         String query = "key2=aa&key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key2=hh&key9=ii";
         String expected = "key3=bb&key4=cc&key2=dd&key2=ff&key5=gg&key4=ff&key9=ii";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = Arrays.asList(0, 3);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeManyNth(mockHttpRequest, "key2", relativeIndexes);
+        String result = helper.removeManyNth(query, "key2", relativeIndexes);
         assertThat(result).isEqualTo(expected);
+    }
 
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
+    @Test
+    public void removeKeyMatchingValue_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeKeyMatchingValue(null, "missing", "Value");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void removeKeyMatchingValue_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeKeyMatchingValue("", "missing", "Value");
+        assertThat(result).isEmpty();
     }
 
     /**
@@ -664,33 +490,9 @@ public class RemoveTest {
     public void removeKeyMatchingValue_KeyNotFound_HasNoEffect() {
         String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueF";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, "missing", "Value");
+        String result = helper.removeKeyMatchingValue(query, "missing", "Value");
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the arguments are null, return the original query string.
-     */
-    @Test
-    public void removeKeyMatchingValue_HandlesNull_HasNoEffect() {
-        String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueF";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, null, null);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -700,15 +502,9 @@ public class RemoveTest {
     public void removeKeyMatchingValue_NoMatchingValueFound_HasNoEffect() {
         String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueB";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "ValueNotFound");
+        String result = helper.removeKeyMatchingValue(query, "key2", "ValueNotFound");
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -720,15 +516,9 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueB";
         String expected = "key4=ValueA&key3=ValueC&key2=ValueD&key4=ValueE";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "ValueB");
+        String result = helper.removeKeyMatchingValue(query, "key2", "ValueB");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -741,15 +531,9 @@ public class RemoveTest {
         String query = "key4=Value%20A&key2=Value%20B&key3=Value%20C&key2=Value%20D&key4=Value%20E&key2=Value%20B";
         String expected = "key4=Value%20A&key3=Value%20C&key2=Value%20D&key4=Value%20E";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "Value B");
+        String result = helper.removeKeyMatchingValue(query, "key2", "Value B");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -761,15 +545,9 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=ValueA&key3=ValueA&key2=ValueA&key4=ValueA&key2=ValueA";
         String expected = "key4=ValueA&key3=ValueA&key4=ValueA";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "ValueA");
+        String result = helper.removeKeyMatchingValue(query, "key2", "ValueA");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -780,15 +558,23 @@ public class RemoveTest {
         String query = "key4=ALL%20SORTED%202%2055_t3.7&key2=ValueA&key3=ValueA&key4=ALL%20SORTED%203&key2=ALL%20SORTED%202%2055_t3.7";
         String expected = "key4=ALL%20SORTED%202%2055_t3.7&key2=ValueA&key3=ValueA&key4=ALL%20SORTED%203";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeKeyMatchingValue(mockHttpRequest, "key2", "alL sOrtEd 2 55_t3.7");
+        String result = helper.removeKeyMatchingValue(query, "key2", "alL sOrtEd 2 55_t3.7");
         assertThat(result).isEqualTo(expected);
+    }
 
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
+    @Test
+    public void removeAnyKeyMatchingValue_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeAnyKeyMatchingValue(null, "MissingValue");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void removeAnyKeyMatchingValue_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.removeAnyKeyMatchingValue("", "MissingValue");
+        assertThat(result).isEmpty();
     }
 
     /**
@@ -798,38 +584,14 @@ public class RemoveTest {
     public void removeAnyKeyMatchingValue_NoValueMatches_HasNoEffect() {
         String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueF";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "MissingValue");
+        String result = helper.removeAnyKeyMatchingValue(query, "MissingValue");
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the value to match argument is null, the original query string should be returned.
-     */
-    @Test
-    public void removeAnyKeyMatchingValue_HandlesNull_HasNoEffect() {
-        String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueF";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, null);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
      * Only the keys having the matching value should be removed.
-     *
+     * <p>
      * key2 appears twice having ValueB, therefore only those key2 instances should be removed. Notice
      * how key2=ValueD still remains, this is because it does not have ValueB.
      */
@@ -838,15 +600,9 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueB";
         String expected = "key4=ValueA&key3=ValueC&key2=ValueD&key4=ValueE";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "ValueB");
+        String result = helper.removeAnyKeyMatchingValue(query, "ValueB");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -858,15 +614,9 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueB";
         String expected = "key2=ValueB&key3=ValueC&key2=ValueD&key4=ValueE&key2=ValueB";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "ValueA");
+        String result = helper.removeAnyKeyMatchingValue(query, "ValueA");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -878,15 +628,9 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=Value%20B&key3=ValueC&key2=ValueD&key4=ValueE&key2=Value%20B";
         String expected = "key4=ValueA&key3=ValueC&key2=ValueD&key4=ValueE";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "Value B");
+        String result = helper.removeAnyKeyMatchingValue(query, "Value B");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -897,17 +641,10 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=Value%20B&key3=ValueC&key2=ValueD&key4=ValueE&key2=Value%20B";
         String expected = "key4=ValueA&key2=Value%20B&key2=ValueD&key4=ValueE&key2=Value%20B";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "ValueC");
+        String result = helper.removeAnyKeyMatchingValue(query, "ValueC");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
-
 
     /**
      * As a sanity check, if all keys have the same value the result should be an empty string.
@@ -917,15 +654,9 @@ public class RemoveTest {
         String query = "key4=ValueA&key2=ValueA&key3=ValueA&key2=ValueA&key4=ValueA&key2=ValueA";
         String expected = "";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "ValueA");
+        String result = helper.removeAnyKeyMatchingValue(query, "ValueA");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -936,14 +667,8 @@ public class RemoveTest {
         String query = "key4=ALL%20SORTED%202%20-%2099.6-12&key2=ValueA&key3=ALL%20SORTED%202%20-%2099.6-12&key2=ValueA&key4=ValueA&key2=ALL%20SORTED%202%20-%2099.6-12";
         String expected = "key2=ValueA&key2=ValueA&key4=ValueA";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.removeAnyKeyMatchingValue(mockHttpRequest, "aLL sOrTed 2 - 99.6-12");
+        String result = helper.removeAnyKeyMatchingValue(query, "aLL sOrTed 2 - 99.6-12");
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 }

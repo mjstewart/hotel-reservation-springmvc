@@ -7,29 +7,21 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public class QueryStringTest {
-
+    /**
+     * Its assumed a valid query string will be provided. However since {@code #request.getQueryString()}
+     * may be null or empty, a check is made to ensure the constructor always converts it into an empty
+     * string in these cases which simplifies error checks etc.
+     */
     @Test
-    public void construction_Illegal_MissingAtLeastOneKeyValuePair() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> QueryString.of(null, new Uris()));
+    public void construction_legal() {
+        // Convert null to empty string to avoid having to check for null every where.
+        QueryString qs2 = QueryString.of(null, new Uris());
+        assertThat(qs2.getOriginalQueryString()).isEmpty();
 
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> QueryString.of("", new Uris()));
-
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> QueryString.of("=", new Uris()));
-
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> QueryString.of("=value", new Uris()));
-
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> QueryString.of("key", new Uris()));
-
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> QueryString.of("key=", new Uris()));
+        QueryString qs3 = QueryString.of("", new Uris());
+        assertThat(qs3.getOriginalQueryString()).isEmpty();
     }
 
     @Test

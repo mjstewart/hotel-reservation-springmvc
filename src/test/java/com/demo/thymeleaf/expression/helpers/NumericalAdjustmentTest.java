@@ -3,16 +3,38 @@ package com.demo.thymeleaf.expression.helpers;
 import com.demo.thymeleaf.expression.QueryStringHelper;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class NumericalAdjustmentTest {
+
+    /**
+     * When query string is null with valid args, an empty string should be returned.
+     */
+    @Test
+    public void adjustNumericValueBy_QueryStringIsNull_ReturnsEmptyString() {
+        List<Integer> relativeIndexes = new ArrayList<>();
+        relativeIndexes.add(0);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.adjustNumericValueBy(null, "missing", relativeIndexes, 1);
+        assertThat(result).isEmpty();
+    }
+
+    /**
+     * When query string is empty with valid args, an empty string should be returned.
+     */
+    @Test
+    public void adjustNumericValueBy_QueryStringIsEmpty_ReturnsEmptyString() {
+        List<Integer> relativeIndexes = new ArrayList<>();
+        relativeIndexes.add(0);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.adjustNumericValueBy("", "missing", relativeIndexes, 1);
+        assertThat(result).isEmpty();
+    }
 
     /**
      * When the key is missing, the original query string should be returned.
@@ -21,61 +43,27 @@ public class NumericalAdjustmentTest {
     public void adjustNumericValueBy_MissingKey_HasNoEffect() {
         String query = "key4=abc&key6=xyz&key8=100";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(0);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "missing", relativeIndexes, 1);
+        String result = helper.adjustNumericValueBy(query, "missing", relativeIndexes, 1);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
-     * When the key is null, the original query string should be returned.
-     */
-    @Test
-    public void adjustNumericValueBy_HandlesNull_HasNoEffect() {
-        String query = "key4=abc&key6=xyz&key8=100";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        List<Integer> relativeIndexes = new ArrayList<>();
-        relativeIndexes.add(0);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, null, relativeIndexes, 0);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the value type is not an integer it should be ignored and the original
-     * query string returned.
+     * When the value type is not an integer it should be ignored and the original query string returned.
      */
     @Test
     public void adjustNumericValueBy_IncompatibleValueType() {
         String query = "key4=abc&key6=xyz&key8=100";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(0);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "key6", relativeIndexes, 1);
+        String result = helper.adjustNumericValueBy(query, "key6", relativeIndexes, 1);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -87,18 +75,12 @@ public class NumericalAdjustmentTest {
     public void adjustNumericValueBy_ByValueIsZero_HasNoEffect() {
         String query = "key4=abc&key6=xyz&key8=100&key9=fgy";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(0);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "key8", relativeIndexes, 0);
+        String result = helper.adjustNumericValueBy(query, "key8", relativeIndexes, 0);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -111,18 +93,12 @@ public class NumericalAdjustmentTest {
         String query = "key4=abc&key6=xyz&key8=100&key9=fgy";
         String expected = "key4=abc&key6=xyz&key8=105&key9=fgy";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(0);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "key8", relativeIndexes, 5);
+        String result = helper.adjustNumericValueBy(query, "key8", relativeIndexes, 5);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -135,18 +111,12 @@ public class NumericalAdjustmentTest {
         String query = "key4=abc&key6=xyz&key8=100&key9=fgy";
         String expected = "key4=abc&key6=xyz&key8=95&key9=fgy";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(0);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "key8", relativeIndexes, -5);
+        String result = helper.adjustNumericValueBy(query, "key8", relativeIndexes, -5);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -162,9 +132,6 @@ public class NumericalAdjustmentTest {
         String query = "key4=ab%20c&key8=100&key9=fgy&key8=23&key11=50&key8=hello_world-53&key8=-5&key8=23-about&key8=80";
         String expected = "key4=ab%20c&key8=100&key9=fgy&key8=24&key11=50&key8=hello_world-53&key8=-4&key8=23-about&key8=80";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(1);
         relativeIndexes.add(2);
@@ -172,11 +139,8 @@ public class NumericalAdjustmentTest {
         relativeIndexes.add(4);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "key8", relativeIndexes, 1);
+        String result = helper.adjustNumericValueBy(query, "key8", relativeIndexes, 1);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -190,9 +154,6 @@ public class NumericalAdjustmentTest {
         String query = "key4=ab%20c&key8=100&key9=fgy&key8=23&key11=50&key8=hello_world-53&key8=-5&key8=23-about&key8=80";
         String expected = "key4=ab%20c&key8=101&key9=fgy&key8=24&key11=50&key8=hello_world-53&key8=-4&key8=23-about&key8=81";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         List<Integer> relativeIndexes = new ArrayList<>();
         relativeIndexes.add(-1);
         relativeIndexes.add(0);
@@ -204,13 +165,43 @@ public class NumericalAdjustmentTest {
         relativeIndexes.add(6);
 
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustNumericValueBy(mockHttpRequest, "key8", relativeIndexes, 1);
+        String result = helper.adjustNumericValueBy(query, "key8", relativeIndexes, 1);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
+    /**
+     * When the target key has all non numeric values they should be ignored with no effect.
+     */
+    @Test
+    public void adjustNumericValueBy_HasNoEffect_WhenAllValuesNonNumeric() {
+        String query = "key4=a&key4=b&key4=c&key5=d&key7=e";
+
+        // set key4 [a, b, c] to increment by 1. It should do nothing given they are non numeric
+        List<Integer> relativeIndexes = new ArrayList<>();
+        relativeIndexes.add(-1);
+        relativeIndexes.add(0);
+        relativeIndexes.add(1);
+        relativeIndexes.add(2);
+        relativeIndexes.add(3);
+
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.adjustNumericValueBy(query, "key4", relativeIndexes, 1);
+        assertThat(result).isEqualTo(query);
+    }
+
+    @Test
+    public void adjustFirstNumericValueBy_QueryStringIsNull_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.adjustFirstNumericValueBy(null, "key2", 3);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void adjustFirstNumericValueBy_QueryStringIsEmpty_ReturnEmptyString() {
+        QueryStringHelper helper = new QueryStringHelper();
+        String result = helper.adjustFirstNumericValueBy("", "key2", 3);
+        assertThat(result).isEmpty();
+    }
 
     /**
      * When the key is missing, the original query string should be returned.
@@ -219,33 +210,9 @@ public class NumericalAdjustmentTest {
     public void adjustFirstNumericValueBy_MissingKey_HasNoEffect() {
         String query = "key4=abc&key6=xyz&key8=100";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key80", 3);
+        String result = helper.adjustFirstNumericValueBy(query, "key80", 3);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
-    }
-
-    /**
-     * When the key is null, the original query string should be returned.
-     */
-    @Test
-    public void adjustFirstNumericValueBy_HandlesNull_HasNoEffect() {
-        String query = "key4=abc&key6=xyz&key8=100";
-
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
-        QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, null, 3);
-        assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -255,15 +222,9 @@ public class NumericalAdjustmentTest {
     public void adjustFirstNumericValueBy_IncompatibleValueType() {
         String query = "key4=abc&key6=xyz&key8=100";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key6", 3);
+        String result = helper.adjustFirstNumericValueBy(query, "key6", 3);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -275,15 +236,9 @@ public class NumericalAdjustmentTest {
     public void adjustFirstNumericValueBy_ByValueIsZero_HasNoEffect() {
         String query = "key4=abc&key6=xyz&key8=100&key9=fgy";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key8", 0);
+        String result = helper.adjustFirstNumericValueBy(query, "key8", 0);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -296,15 +251,9 @@ public class NumericalAdjustmentTest {
         String query = "key4=abc&key6=xyz&key8=100&key9=fgy";
         String expected = "key4=abc&key6=xyz&key8=103&key9=fgy";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key8", 3);
+        String result = helper.adjustFirstNumericValueBy(query, "key8", 3);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -317,15 +266,9 @@ public class NumericalAdjustmentTest {
         String query = "key4=abc&key6=xyz&key8=100&key9=fgy";
         String expected = "key4=abc&key6=xyz&key8=97&key9=fgy";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key8", -3);
+        String result = helper.adjustFirstNumericValueBy(query, "key8", -3);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -341,15 +284,9 @@ public class NumericalAdjustmentTest {
         String query = "key4=ab%20c&key8=100&key9=fgy&key8=23&key11=50&key8=hello_world-53&key8=-5&key8=23-about&key8=80";
         String expected = "key4=ab%20c&key8=103&key9=fgy&key8=23&key11=50&key8=hello_world-53&key8=-5&key8=23-about&key8=80";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key8", 3);
+        String result = helper.adjustFirstNumericValueBy(query, "key8", 3);
         assertThat(result).isEqualTo(expected);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 
     /**
@@ -359,14 +296,8 @@ public class NumericalAdjustmentTest {
     public void adjustFirstNumericValueBy_NoEffect_WhenAllValuesAreNonNumeric() {
         String query = "key4=ab%20c&key8=x100&key9=fgy&key8=x23&key11=x50&key8=hello_world-53&key8=-5&key8=23-about&key8=x80";
 
-        HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
-        when(mockHttpRequest.getQueryString()).thenReturn(query);
-
         QueryStringHelper helper = new QueryStringHelper();
-        String result = helper.adjustFirstNumericValueBy(mockHttpRequest, "key8", 3);
+        String result = helper.adjustFirstNumericValueBy(query, "key8", 3);
         assertThat(result).isEqualTo(query);
-
-        verify(mockHttpRequest, times(1)).getQueryString();
-        verifyNoMoreInteractions(mockHttpRequest);
     }
 }

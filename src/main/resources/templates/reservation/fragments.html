@@ -4,6 +4,9 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <body>
 
+
+
+
 <div th:fragment="globalErrors(errors)" th:unless="${errors.isEmpty()}" class="ui negative message"
      id="globalValidationErrors"
      th:with="hasManyErrors=${errors.size() > 1}">

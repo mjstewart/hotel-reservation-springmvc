@@ -17,17 +17,71 @@
         0 hotels found - <a th:href="@{/}">Search again</a>
     </div>
 
+    <h2 th:with="newQueryString=${#qs.replaceFirst(#request.getQueryString(), 'region', 'Australia')}"
+        th:text="${x}">
+    </h2>
+
     <div th:unless="${totalResults == 0}">
-        <h3 class="ui dividing header margin-top-20" th:unless="${totalResults == 0}"
-            th:text="|Results (${totalResults})|"></h3>
-        <table class="ui celled table">
+        <h3 class="ui dividing header margin-top-20" th:text="|Results (${totalResults})|"></h3>
+        <table class="ui sortable celled table"
+               th:with="qstring=${#request.getQueryString()},
+                        urlBuilder=${#qs.urlBuilder(#request.getRequestURI())},
+                        fieldSorterAsc=${#qs.fieldSorterAsc(qstring)},
+                        fieldSorterDesc=${#qs.fieldSorterDesc(qstring)},
+                        cssWhenFieldIsAsc=${#qs.valueWhenMatchesSortAsc(qstring, '', 'sorted ascending', 'sorted descending')}">
             <thead>
+
             <tr>
-                <th>Hotel</th>
-                <th>Stars</th>
-                <th>Suburb</th>
-                <th>State</th>
-                <th>Postcode</th>
+                <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('name'))}"
+                    th:classappend="${cssWhenFieldIsAsc.apply('name')}"
+                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                    th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort hotel name A to Z',
+                                 'Sort hotel name Z to A',
+                                 'Sort hotel name A to Z').apply('name')}">
+                    Hotel
+                </th>
+
+                <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('stars'))}"
+                    th:classappend="${cssWhenFieldIsAsc.apply('stars')}"
+                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                    th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort by lowest to highest rating',
+                                 'Sort by highest to lowest rating',
+                                 'Sort by lowest to highest rating').apply('stars')}">
+                    Stars
+                </th>
+
+                <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('address.suburb'))}"
+                    th:classappend="${cssWhenFieldIsAsc.apply('address.suburb')}"
+                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                    th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort suburb A to Z',
+                                 'Sort suburb Z to A',
+                                 'Sort suburb A to Z').apply('address.suburb')}">
+                    Suburb
+                </th>
+
+                <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('address.state'))}"
+                    th:classappend="${cssWhenFieldIsAsc.apply('address.state')}"
+                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                    th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort suburb A to Z',
+                                 'Sort suburb Z to A',
+                                 'Sort suburb A to Z').apply('address.state')}">
+                    State
+                </th>
+
+                <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('address.postcode'))}"
+                    th:classappend="${cssWhenFieldIsAsc.apply('address.postcode')}"
+                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                    th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort postcode lowest to highest',
+                                 'Sort postcode highest to lowest',
+                                 'Sort postcode lowest to highest').apply('address.postcode')}">
+                    Postcode
+                </th>
+
                 <th>View rooms</th>
             </tr>
             </thead>
@@ -50,12 +104,10 @@
             </tr>
             </tbody>
 
-            <tfoot th:with="url=|${#request.getRequestURI()}?${#request.getQueryString()}|,
-                    pageNumber=${results.getPageable().getPageNumber()}">
+            <tfoot th:with="lastPage=${results.getTotalPages() - 1},
+             pageNumber=${results.getPageable().getPageNumber()},
+             isOnLastPage=${pageNumber == lastPage}">
 
-            <!--motivation for why my extension is good!-->
-            <!--need to extract every key/value and rebuild query string. hassle if you dont know every key or a very large query string-->
-            <!--@{${#request.getRequestURI()}(page=${pageNumber - 1},${#request.getQueryString()})}-->
             <tr>
                 <th colspan="6">
                     <span class="margin-right-10"
@@ -63,22 +115,26 @@
                     <div class="ui pagination menu">
                         <a class="icon item"
                            th:if="${results.getPageable().hasPrevious()}"
-                           th:href="@{${url}(page=0)}">
+                           th:with="newQueryString=${#qs.replaceFirst(#request.getQueryString(), 'page', '0')}"
+                           th:href="${#qs.url(#request.getRequestURI(), newQueryString)}">
                             <i class="angle double left icon"></i>
                         </a>
                         <a class="icon item"
-                           th:if="${results.getPageable().hasPrevious()}">
+                           th:if="${results.getPageable().hasPrevious()}"
+                           th:with="newQueryString=${#qs.decrementPage(#request.getQueryString())}"
+                           th:href="${#qs.url(#request.getRequestURI(), newQueryString)}">
                             <i class="left chevron icon"></i>
                         </a>
                         <a class="icon item"
-                           th:if="${pageNumber < results.getTotalPages()}"
-                           th:with="newQueryString=${#qs.incrementPageTest(#request.getQueryString())}"
+                           th:unless="${isOnLastPage}"
+                           th:with="newQueryString=${#qs.incrementPage(#request.getQueryString(), lastPage)}"
                            th:href="${#qs.url(#request.getRequestURI(), newQueryString)}">
                             <i class="right chevron icon"></i>
                         </a>
                         <a class="icon item"
-                           th:if="${pageNumber < results.getTotalPages()}"
-                           th:href="@{${url}(page=${results.getTotalPages() - 1})}">
+                           th:unless="${isOnLastPage}"
+                           th:with="newQueryString=${#qs.replaceFirst(#request.getQueryString(), 'page', lastPage)}"
+                           th:href="${#qs.url(#request.getRequestURI(), newQueryString)}">
                             <i class="angle double right icon"></i>
                         </a>
                     </div>
@@ -86,15 +142,19 @@
             </tr>
             </tfoot>
         </table>
-
-        <h2 th:with="newQueryString=${#qs.incrementPageTest(#request.getQueryString())},
-                     newUrl=${#qs.url(#request.getRequestURI(), newQueryString)}"
-            th:text="${#qs.url(#request.getRequestURI(), newQueryString)}">
-        </h2>
     </div>
 </div>
 <th:block layout:fragment="script">
+    <script>
+        function onSortChange(url) {
+            console.log('sorted called with url = ' + url);
+            window.location = url;
+        }
 
+        $(document).ready(function () {
+
+        });
+    </script>
 </th:block>
 
 </body>

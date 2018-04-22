@@ -39,6 +39,15 @@ public class HotelSearchController {
         return "/hotel/hotels";
     }
 
+    @GetMapping(value = "/hotels")
+    public String getHotels(Pageable pageable, Model model) {
+        // TODO add test
+
+        Page<Hotel> results = hotelRepository.findAll(pageable);
+        model.addAttribute("results", results);
+        return "/hotel/hotels";
+    }
+
 
 //    @GetMapping("/")
 //    public String getAvailableRooms(Model model, Pageable pageable) {

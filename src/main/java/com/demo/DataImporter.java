@@ -98,10 +98,10 @@ public class DataImporter {
         LocalTime latestCheckOutTime = LocalTime.of(15, 0);
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(29.40);
 
-        Address address2 = new Address("Glen Hotel", "99A Glen Road", null,
+        Address address2 = new Address("Glen Iris", "99A Glen Road", null,
                 State.VIC, "Glen Waverley", new Postcode("3150"));
 
-        Hotel hotel = new Hotel("Glen Hotel", address2, 3, "glenhotel.com.au",
+        Hotel hotel = new Hotel("Glen Iris", address2, 3, "glenhotel.com.au",
                 earliestCheckInTime,
                 latestCheckInTime,
                 earliestCheckOutTime,
@@ -128,10 +128,10 @@ public class DataImporter {
         LocalTime latestCheckOutTime = LocalTime.of(14, 0);
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(45.60);
 
-        Address address = new Address("Hotel Cevello", "2 smith street", null,
+        Address address = new Address("Cevello Blanca", "2 smith street", null,
                 State.VIC, "Melbourne", new Postcode("3000"));
 
-        Hotel hotel = new Hotel("Hotel Cevello", address, 5, "cevellohotel.com.au",
+        Hotel hotel = new Hotel("Cevello Blanca", address, 5, "cevellohotel.com.au",
                 earliestCheckInTime,
                 latestCheckInTime,
                 earliestCheckOutTime,
@@ -158,10 +158,10 @@ public class DataImporter {
         LocalTime latestCheckOutTime = LocalTime.of(14, 0);
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(45.60);
 
-        Address address = new Address("Hotel Bravo", "7 apple avenue", null,
+        Address address = new Address("Bravo", "7 apple avenue", null,
                 State.VIC, "Melbourne", new Postcode("3000"));
 
-        Hotel hotel = new Hotel("Hotel Bravo", address, 2, "bravoohotel.com.au",
+        Hotel hotel = new Hotel("Bravo", address, 2, "bravoohotel.com.au",
                 earliestCheckInTime,
                 latestCheckInTime,
                 earliestCheckOutTime,
@@ -188,10 +188,10 @@ public class DataImporter {
         LocalTime latestCheckOutTime = LocalTime.of(14, 0);
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(45.60);
 
-        Address address = new Address("Hotel Zamza", "7 zamza avenue", null,
+        Address address = new Address("Zamza", "7 zamza avenue", null,
                 State.VIC, "Melbourne", new Postcode("3000"));
 
-        Hotel hotel = new Hotel("Hotel Zamza", address, 4, "zamzaohotel.com.au",
+        Hotel hotel = new Hotel("Zamza", address, 4, "zamzaohotel.com.au",
                 earliestCheckInTime,
                 latestCheckInTime,
                 earliestCheckOutTime,

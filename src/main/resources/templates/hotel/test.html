@@ -6,8 +6,11 @@
 <body>
 <div layout:fragment="content">
 
-    <h4 th:with="newQueryString=${#qs.toggleSortDefaultDesc(#request, 'country')}"
-        th:text="${newQueryString}"></h4>
+    <h1 th:text="${#request.getQueryString()}"></h1>
+
+    <h2 th:with="newQueryString=${#qs.getCurrentSortDirectionDesc(#request.getQueryString(), 'suburb')}"
+        th:text="${newQueryString}">
+    </h2>
 
 </div>
 <th:block layout:fragment="script">
