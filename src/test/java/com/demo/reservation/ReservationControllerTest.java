@@ -35,6 +35,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Tests for the reservation booking flow.
+ */
 @RunWith(SpringRunner.class)
 @WebMvcTest(ReservationController.class)
 @ActiveProfiles("test")
@@ -61,6 +64,7 @@ public class ReservationControllerTest {
 
     /**
      * Creates a {@code ReservationFlow} in the expected state for entering in the reservation dates.
+     * This will enable quickly rebuilding the current reservation flow state up to the current flow state under test.
      *
      * <p>ReservationDates is empty ready to bind to the new ReservationDates form.</p>
      */
@@ -73,6 +77,7 @@ public class ReservationControllerTest {
 
     /**
      * Creates a {@code ReservationFlow} in the expected state for entering in guest details.
+     * This will enable quickly rebuilding the current reservation flow state up to the current flow state under test.
      *
      * <ul>
      * <li>Step 1 - ReservationDates = valid</li>
@@ -95,7 +100,9 @@ public class ReservationControllerTest {
         return reservationFlow;
     }
 
-
+    /**
+     * Simulates sending an empty form to the server.
+     */
     private LinkedMultiValueMap<String, String> emptyParams() {
         return new LinkedMultiValueMap<>();
     }
@@ -103,6 +110,11 @@ public class ReservationControllerTest {
 
     // Flow step 1 - GET date form
 
+    /**
+     * When we request the date form and the requested roomId exists its returned, we are asserting that the room is
+     * found and the {@code ReservationFlow} is in the expected state of displaying the Dates form as active but not
+     * yet completed.
+     */
     @Test
     public void getDateForm_RetrievesRoomById() throws Exception {
         Room room = createRoom();
@@ -300,7 +312,11 @@ public class ReservationControllerTest {
                 Matchers.hasProperty("reservation",
                         Matchers.hasProperty("guests", Matchers.hasSize(0))));
 
-        // The binding stage will end up creating a new Guest but there will be nothing in it.
+        /*
+         * Since we are posting no guest details to the server, @ModelAttribute("guest") will create a new guest and
+         * add it to the model. Since there are errors, this same guest will stay in the model for re rendering in
+         * the template. We are simply creating an empty object to simulate what spring will do in this case.
+         */
         ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(new Guest()));
 
         mockMvc.perform(post("/reservation/guests")
@@ -323,6 +339,12 @@ public class ReservationControllerTest {
                 Matchers.hasProperty("reservation",
                         Matchers.hasProperty("guests", Matchers.hasSize(0))));
 
+        /*
+         * When spring sees @ModelAttribute("guest"), it will look in the form being posted and recreate a guest object
+         * according to the forms key=value pairs and will add it to the model. Since there are errors, we are checking
+         * to see that this guest stays in the model to be re rendered in the template to display the errors and to
+         * prevent the form fields being cleared.
+         */
         Guest formGuest = new Guest("", "", false);
         ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(formGuest));
 
@@ -352,6 +374,12 @@ public class ReservationControllerTest {
                 Matchers.hasProperty("reservation",
                         Matchers.hasProperty("guests", Matchers.hasSize(1))));
 
+        /*
+         * When spring sees @ModelAttribute("guest"), it will look in the form being posted and recreate a guest object
+         * according to the forms key=value pairs and will add it to the model. Since there are errors, we are checking
+         * to see that this guest stays in the model to be re rendered in the template to display the errors and to
+         * prevent the form fields being cleared.
+         */
         Guest formGuest = new Guest("john", "smith", false);
         ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(formGuest));
 
@@ -381,6 +409,12 @@ public class ReservationControllerTest {
                 Matchers.hasProperty("reservation",
                         Matchers.hasProperty("guests", Matchers.hasSize(1))));
 
+        /*
+         * When spring sees @ModelAttribute("guest"), it will look in the form being posted and recreate a guest object
+         * according to the forms key=value pairs and will add it to the model. Since there are errors, we are checking
+         * to see that this guest stays in the model to be re rendered in the template to display the errors and to
+         * prevent the form fields being cleared.
+         */
         Guest formGuest = new Guest("marie", "clarke", false);
         ResultMatcher didNotCreateNewGuestObject = model().attribute("guest", Matchers.is(formGuest));
 
@@ -413,7 +447,12 @@ public class ReservationControllerTest {
                         Matchers.hasProperty("guests",
                                 Matchers.containsInAnyOrder(new Guest("marie", "clarke", false)))));
 
-        // expect to create a new guest object to bind to the new form.
+        /*
+         * When spring sees @ModelAttribute("guest"), it will look in the form being posted and recreate a guest object
+         * according to the forms key=value pairs and will add it to the model. Since there are no errors, we want to
+         * create a new guest object so the model contains a fresh guest ready to be binded to the new form, otherwise
+         * the old guest info will be in the form still!
+         */
         ResultMatcher didCreateNewGuestObject = model().attribute("guest", Matchers.is(new Guest()));
 
         mockMvc.perform(post("/reservation/guests")
@@ -431,8 +470,10 @@ public class ReservationControllerTest {
     }
 
     /**
-     * Id not found should never happen as the button will always contain a guest that exists.
-     * Note that a new {@code Guest} must be in the model to bind to the guest form.
+     * The guests temp id not found should never happen as the button will always contain a guest that exists.
+     *
+     * Note that a new {@code Guest} must be in the model to bind to the guest form. Removing a guest is not dealing
+     * with adding a guest so we ensure a new guest is always returned to get a clean form each time.
      */
     @Test
     public void postRemoveGuest_GuestIdNotFound_ShouldHaveNoEffect() throws Exception {
@@ -473,9 +514,10 @@ public class ReservationControllerTest {
                 Matchers.hasProperty("reservation",
                         Matchers.hasProperty("guests", Matchers.containsInAnyOrder(guestB))));
 
+        // remove guestA
         mockMvc.perform(post("/reservation/guests")
                 .sessionAttr("reservationFlow", reservationFlow)
-                .param("removeGuest", guestA.getGuestId().toString()))
+                .param("removeGuest", guestA.getTempId().toString()))
                 .andExpect(view().name("reservation/guests"))
                 .andExpect(model().hasNoErrors())
                 .andExpect(model().attribute("guest", Matchers.is(new Guest())))

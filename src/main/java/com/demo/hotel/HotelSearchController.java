@@ -1,25 +1,32 @@
 package com.demo.hotel;
 
 import com.demo.domain.Hotel;
+import com.demo.domain.Room;
 import com.demo.persistance.HotelRepository;
+import com.demo.persistance.RoomPredicates;
+import com.demo.persistance.RoomRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class HotelSearchController {
 
     private HotelRepository hotelRepository;
+    private RoomRepository roomRepository;
 
     private int pageSize;
 
     public HotelSearchController(HotelRepository hotelRepository,
+                                 RoomRepository roomRepository,
                                  @Value("${spring.data.web.pageable.default-page-size}") int pageSize) {
         this.hotelRepository = hotelRepository;
+        this.roomRepository = roomRepository;
         this.pageSize = pageSize;
     }
 
@@ -39,35 +46,23 @@ public class HotelSearchController {
         return "/hotel/hotels";
     }
 
+    @GetMapping(value = "/hotel/{id}/rooms")
+    public String getHotelRooms(@PathVariable("id") Long id, Pageable pageable, Model model) {
+        Page<Room> availableRooms = roomRepository.findAll(RoomPredicates.availableRoom(id), pageable);
+        model.addAttribute("rooms", availableRooms);
+        return "/hotel/rooms";
+    }
+
+
+
+
+
+
+    // TODO: for testing
     @GetMapping(value = "/hotels")
     public String getHotels(Pageable pageable, Model model) {
-        // TODO add test
-
         Page<Hotel> results = hotelRepository.findAll(pageable);
         model.addAttribute("results", results);
         return "/hotel/hotels";
     }
-
-
-//    @GetMapping("/")
-//    public String getAvailableRooms(Model model, Pageable pageable) {
-//        System.out.println("getAvailableRooms");
-//        System.out.println(pageable);
-//
-//
-//        PageRequest pageRequest = PageRequest.of(0, 10, Sort.Direction.DESC, "costPerNight");
-//
-//
-//
-//        Page<Room> rooms =
-//                roomRepository.findAllByReservationIsNull(pageable);
-//
-//
-////        List<Room> rooms = roomRepository.getRoomsByReservationIsNull().stream()
-////                .sorted(Comparator.comparing(Room::getCostPerNight).reversed())
-////                .collect(Collectors.toList());
-////
-////        model.addAttribute("rooms", rooms);
-//        return "hotel/rooms";
-//    }
 }

@@ -12,12 +12,14 @@ public class TestHelpers {
      *
      * <p>
      * <p>Usage: Assert that the {@code Page} has 0 elements.</p>
+     * <blockquote>
      * <pre>
      *      FeatureMatcher<Page<Hotel>, Long> hasExpectedPageResult = mappedAssertion(Page::getTotalElements, Matchers.is(0L));
      *
      *      ...
-     *      .andExpect(model().attribute("resultPage", hasExpectedPageResult)
+     *      .andExpect(model().attribute("resultPage", hasExpectedPageResult))
      * </pre>
+     * </blockquote>
      *
      * @param mapper     The mapping function.
      * @param subMatcher Asserts the value produced by the mapping function.

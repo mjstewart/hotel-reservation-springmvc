@@ -129,7 +129,7 @@ public class DataImporter {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(45.60);
 
         Address address = new Address("Cevello Blanca", "2 smith street", null,
-                State.VIC, "Melbourne", new Postcode("3000"));
+                State.VIC, "Carlton", new Postcode("3053"));
 
         Hotel hotel = new Hotel("Cevello Blanca", address, 5, "cevellohotel.com.au",
                 earliestCheckInTime,
@@ -159,7 +159,7 @@ public class DataImporter {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(45.60);
 
         Address address = new Address("Bravo", "7 apple avenue", null,
-                State.VIC, "Melbourne", new Postcode("3000"));
+                State.VIC, "Docklands", new Postcode("3008"));
 
         Hotel hotel = new Hotel("Bravo", address, 2, "bravoohotel.com.au",
                 earliestCheckInTime,

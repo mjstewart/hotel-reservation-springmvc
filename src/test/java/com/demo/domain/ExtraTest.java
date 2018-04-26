@@ -10,14 +10,17 @@ import static org.assertj.core.api.Assertions.*;
 
 public class ExtraTest {
 
+    /**
+     * The total cost of an {@code Extra} is {@code perNightPrice * totalNights}
+     */
     @Test
     public void getTotalPrice() {
-        BigDecimal dailyPrice = BigDecimal.valueOf(5.53);
+        BigDecimal perNightPrice = BigDecimal.valueOf(5.53);
         long totalNights = 5;
 
-        Extra extra = new Extra("a", dailyPrice, Extra.Type.Basic, Extra.Category.General);
+        Extra extra = new Extra("a", perNightPrice, Extra.Type.Basic, Extra.Category.General);
 
         assertThat(extra.getTotalPrice(totalNights))
-                .isEqualTo(dailyPrice.multiply(BigDecimal.valueOf(totalNights)));
+                .isEqualTo(perNightPrice.multiply(BigDecimal.valueOf(totalNights)));
     }
 }

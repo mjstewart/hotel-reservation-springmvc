@@ -10,9 +10,9 @@ import java.util.UUID;
 
 @Entity
 public class Guest {
-    // Pre save id to identify guest
+    // Allows UI to delete guest by its temp id rather than send full name details which equals/hashCode use.
     @Transient
-    private UUID guestId = UUID.randomUUID();
+    private UUID tempId = UUID.randomUUID();
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -37,10 +37,6 @@ public class Guest {
     }
 
     public Guest() {
-    }
-
-    public UUID getGuestId() {
-        return guestId;
     }
 
     public String getFirstName() {
@@ -77,6 +73,13 @@ public class Guest {
         return Utils.capitalizeWords(firstName) + " " + Utils.capitalizeWords(lastName);
     }
 
+    public UUID getTempId() {
+        return tempId;
+    }
+
+    /**
+     * Cant use a UUID because that does not prevent a guest with the same name being added.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

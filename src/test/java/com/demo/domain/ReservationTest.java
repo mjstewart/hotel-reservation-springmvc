@@ -25,6 +25,9 @@ public class ReservationTest {
         return room;
     }
 
+    /**
+     * Confirm isRoomFull determines a room is fool when its guest limit is reached.
+     */
     @Test
     public void isRoomFull() {
         Room room = createRoom();
@@ -40,6 +43,9 @@ public class ReservationTest {
         assertThat(reservation.isRoomFull()).isTrue();
     }
 
+    /**
+     * You should not be able to add a guest to a room that is already full.
+     */
     @Test
     public void addGuest_OnlyWhenThereAreFreeBeds() {
         Room room = createRoom();
@@ -61,15 +67,16 @@ public class ReservationTest {
     }
 
     @Test
-    public void removeGuest_GuestIdDoesNotExist_HasNoEffect() {
+    public void removeGuestById_NoGuestExists_HasNoEffect() {
         Reservation reservation = new Reservation();
+
         boolean removed = reservation.removeGuestById(UUID.randomUUID());
         assertThat(removed).isFalse();
         assertThat(reservation.getGuests()).isEmpty();
     }
 
     @Test
-    public void removeGuest_GuestIdExists_GuestIsRemoved() {
+    public void removeGuestById_GuestExists_GuestIsRemoved() {
         Reservation reservation = new Reservation();
         Room room = createRoom();
         room.setBeds(2);
@@ -82,12 +89,15 @@ public class ReservationTest {
         reservation.addGuest(guestB);
         assertThat(reservation.getGuests()).containsExactlyInAnyOrder(guestA, guestB);
 
-        boolean removed = reservation.removeGuestById(guestA.getGuestId());
+        boolean removed = reservation.removeGuestById(guestA.getTempId());
 
         assertThat(removed).isTrue();
         assertThat(reservation.getGuests()).containsExactly(guestB);
     }
 
+    /**
+     * All general extras must be {@code Extra.Category.General}, otherwise an exception is thrown.
+     */
     @Test
     public void setGeneralExtras() {
         Reservation reservation = new Reservation();
@@ -98,54 +108,21 @@ public class ReservationTest {
         assertThat(reservation.getGeneralExtras()).isEqualTo(generalExtras);
     }
 
+    /**
+     * If general extras contains a {@code Extra.Category.Food} an exception is thrown.
+     */
     @Test(expected = IllegalArgumentException.class)
     public void setGeneralExtras_ThrowsException_WhenInvalidExtras() {
         Reservation reservation = new Reservation();
         reservation.setGeneralExtras(
                 Set.of(new Extra("a", BigDecimal.valueOf(1.50), Extra.Type.Basic, Extra.Category.Food))
         );
+        assertThat(reservation.getGeneralExtras()).isNull();
     }
 
-    @Test
-    public void setMealPlans() {
-        Guest guest = new Guest("john", "smith", false);
-
-        List<Extra> illegalFoodExtras = List.of(
-                new Extra("a", BigDecimal.valueOf(1.23), Extra.Type.Basic, Extra.Category.Food),
-                new Extra("b", BigDecimal.valueOf(2.40), Extra.Type.Basic, Extra.Category.Food)
-        );
-
-        Set<MealPlan> mealPlans = Set.of(new MealPlan(guest, new Reservation(), illegalFoodExtras, List.of()));
-
-        Reservation reservation = new Reservation();
-        reservation.setMealPlans(mealPlans);
-
-        assertThat(reservation.getMealPlans()).isEqualTo(mealPlans);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void setMealPlans_ThrowsException_WhenInvalidExtras() {
-        Guest guest1 = new Guest("john", "smith", false);
-        Guest guest2 = new Guest("sally", "smith", false);
-
-        // General category should not be allowed in a meal plan.
-        List<Extra> illegalFoodExtras = List.of(
-                new Extra("a", BigDecimal.valueOf(1.23), Extra.Type.Basic, Extra.Category.General),
-                new Extra("b", BigDecimal.valueOf(2.40), Extra.Type.Basic, Extra.Category.Food));
-
-        List<Extra> validFoodExtras = List.of(
-                new Extra("c", BigDecimal.valueOf(1.23), Extra.Type.Basic, Extra.Category.Food),
-                new Extra("d", BigDecimal.valueOf(2.40), Extra.Type.Basic, Extra.Category.Food));
-
-        Reservation reservation = new Reservation();
-        reservation.setMealPlans(
-                Set.of(
-                        new MealPlan(guest1, new Reservation(), illegalFoodExtras, List.of()),
-                        new MealPlan(guest2, new Reservation(), validFoodExtras, List.of())
-                )
-        );
-    }
-
+    /**
+     * When a customer chooses the late checkout option, the late fee should be returned.
+     */
     @Test
     public void getChargeableLateCheckoutFee_WhenLateCheckout_ChargeFee() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -154,11 +131,16 @@ public class ReservationTest {
         room.getHotel().setLateCheckoutFee(lateCheckoutFee);
         Reservation reservation = new Reservation();
         reservation.setRoom(room);
+
+        // enable late checkout
         reservation.getDates().setLateCheckout(true);
 
         assertThat(reservation.getChargeableLateCheckoutFee()).isEqualTo(lateCheckoutFee);
     }
 
+    /**
+     * When a customer does not select late checkout, the chargeable late fee is $0.00.
+     */
     @Test
     public void getChargeableLateCheckoutFee_WhenNoLateCheckout_NoCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -167,11 +149,17 @@ public class ReservationTest {
         room.getHotel().setLateCheckoutFee(lateCheckoutFee);
         Reservation reservation = new Reservation();
         reservation.setRoom(room);
+
+        // no late checkout = $0.00
         reservation.getDates().setLateCheckout(false);
 
         assertThat(reservation.getChargeableLateCheckoutFee()).isEqualTo(BigDecimal.ZERO);
     }
 
+    /**
+     * When a customer selects late checkout but have a {@code RoomType.Luxury} room, the late checkout fee is waived and
+     * should return $0.00.
+     */
     @Test
     public void getLateCheckoutFee_WhenLuxuryRoomType_NoLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -187,8 +175,12 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(BigDecimal.ZERO);
     }
 
+    /**
+     * When a customer selects late checkout but have a {@code RoomType.Business}, the late checkout fee is waived and
+     * should return $0.00.
+     */
     @Test
-    public void getLateCheckoutFee_WhenBusinessRoomType_ApplyLateCharge() {
+    public void getLateCheckoutFee_WhenBusinessRoomType_NoLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
 
         Room room = createRoom();
@@ -202,6 +194,9 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(BigDecimal.ZERO);
     }
 
+    /**
+     * When a customer selects late checkout but have a {@code RoomType.Economy}, the late checkout fee is applied.
+     */
     @Test
     public void getLateCheckoutFee_WhenEconomyRoomType_ApplyLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -217,6 +212,9 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(lateCheckoutFee);
     }
 
+    /**
+     * When a customer selects late checkout but have a {@code RoomType.Balcony}, the late checkout fee is applied.
+     */
     @Test
     public void getLateCheckoutFee_WhenBalconyRoomType_ApplyLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -233,7 +231,9 @@ public class ReservationTest {
     }
 
     /**
-     * Technically won't occur since the business rule of at least 1 night is validated.
+     * If the reservation was for 0 nights, the cost should be 0.
+     * Technically this won't occur since the business rule of at least 1 night is validated, however is
+     * tested as a sanity check to ensure room cost is being calculated correctly.
      */
     @Test
     public void getTotalRoomCost_ZeroNights_NoCost() {
@@ -253,6 +253,9 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCost()).isEqualTo(BigDecimal.ZERO);
     }
 
+    /**
+     * A room with an active late fee should not be considered in the total room cost calculation.
+     */
     @Test
     public void getTotalRoomCost_CalculatesCorrectCost() {
         Room room = createRoom();
@@ -268,12 +271,16 @@ public class ReservationTest {
         reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
         reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
 
-        // expected cost for 3 nights
+        // expected cost for 3 nights, note how no late fee is considered for this calculation.
         BigDecimal expectedCost = costPerNight.multiply(BigDecimal.valueOf(3));
 
         assertThat(reservation.getTotalRoomCost()).isEqualTo(expectedCost);
     }
 
+    /**
+     * When the late checkout is NOT enabled and the room type does not waive the late checkout fee,
+     * the late checkout fee should NOT be included in the total room cost.
+     */
     @Test
     public void getTotalRoomCostWithLateCheckoutFee_NoCheckoutFee_RoomCostOnly() {
         Room room = createRoom();
@@ -296,8 +303,12 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCostWithLateCheckoutFee()).isEqualTo(expectedCost);
     }
 
+    /**
+     * When the late checkout is enabled and the room type does not waive the late checkout fee,
+     * the late checkout fee should be included in the total room cost.
+     */
     @Test
-    public void getTotalRoomCostWithLateCheckoutFee_WithCheckoutFee_CorrectCost() {
+    public void getTotalRoomCostWithLateCheckoutFee_WithLateCheckoutFee_CorrectCost() {
         Room room = createRoom();
         room.setRoomType(RoomType.Economy);
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -319,7 +330,9 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCostWithLateCheckoutFee()).isEqualTo(expectedCost);
     }
 
-
+    /**
+     * When there are no general extras, the cost should be zero.
+     */
     @Test
     public void getTotalGeneralExtrasCost_NoExtras() {
         Set<Extra> extras = Set.of();
@@ -332,10 +345,16 @@ public class ReservationTest {
         assertThat(reservation.getTotalGeneralExtrasCost()).isEqualTo(BigDecimal.ZERO);
     }
 
-
+    /**
+     * When there are general extras, the total cost should be equal to the sum of each extra multiplied by
+     * the total night stay.
+     */
     @Test
     public void getTotalGeneralExtrasCost() {
+        BigDecimal nights = BigDecimal.valueOf(3);
+
         // Sum the result of each extras daily price multiplied by total nights.
+        // Eg: (Extra "a" 1.20 * 3) + (Extra "b" 3.80 * 3).
         Set<Extra> extras = Set.of(
                 new Extra("a", BigDecimal.valueOf(1.20), Extra.Type.Basic, Extra.Category.General),
                 new Extra("b", BigDecimal.valueOf(3.80), Extra.Type.Basic, Extra.Category.General)
@@ -344,7 +363,6 @@ public class ReservationTest {
         Reservation reservation = new Reservation();
         reservation.setGeneralExtras(extras);
 
-        BigDecimal nights = BigDecimal.valueOf(3);
         reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
         reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
 
@@ -354,12 +372,19 @@ public class ReservationTest {
         assertThat(reservation.getTotalGeneralExtrasCost()).isEqualTo(expectedSum);
     }
 
+    /**
+     * When there are no meal plans, the cost should be zero.
+     */
     @Test
     public void getTotalMealPlansCost_NoMealPlans() {
         Reservation reservation = new Reservation();
         assertThat(reservation.getTotalMealPlansCost()).isEqualTo(BigDecimal.ZERO);
     }
 
+    /**
+     * When there are many meal plans, the total cost of all meal plans should be the sum of each individual meal plan
+     * per guest.
+     */
     @Test
     public void getTotalMealPlansCost() {
         Reservation reservation = new Reservation();
@@ -368,6 +393,7 @@ public class ReservationTest {
         reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
         reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
 
+        // Meal plan 1 calculation
         List<Extra> foodExtrasPlan1 = List.of(
                 new Extra("Breakfast", new BigDecimal("2.00"), Extra.Type.Basic, Extra.Category.Food),
                 new Extra("Lunch", new BigDecimal("4.12"), Extra.Type.Basic, Extra.Category.Food),
@@ -381,6 +407,7 @@ public class ReservationTest {
                 .add(BigDecimal.valueOf(4.12).multiply(nights))
                 .add(BigDecimal.valueOf(5.63).multiply(nights));
 
+        // Meal plan 2 calculation
         List<Extra> foodExtrasPlan2 = List.of(
                 new Extra("Dinner", new BigDecimal("5.24"), Extra.Type.Basic, Extra.Category.Food)
         );
@@ -397,49 +424,70 @@ public class ReservationTest {
         assertThat(reservation.getTotalMealPlansCost()).isEqualTo(expectedCost);
     }
 
+    /**
+     * Ensure that the total cost is calculated by including all the correct sub totals.
+     */
     @Test
     public void getTotalCostExcludingTax() {
         Reservation reservation = mock(Reservation.class);
 
+        // mock the sub totals
         when(reservation.getTotalRoomCostWithLateCheckoutFee()).thenReturn(BigDecimal.valueOf(5));
         when(reservation.getTotalGeneralExtrasCost()).thenReturn(BigDecimal.valueOf(6));
         when(reservation.getTotalMealPlansCost()).thenReturn(BigDecimal.valueOf(7));
+
+        // then call the real method
         when(reservation.getTotalCostExcludingTax()).thenCallRealMethod();
 
+        // then hope the real method sums everything up correctly
         assertThat(reservation.getTotalCostExcludingTax()).isEqualTo(BigDecimal.valueOf(18));
 
+        // by actually calling the correct methods!
         verify(reservation, times(1)).getTotalRoomCostWithLateCheckoutFee();
         verify(reservation, times(1)).getTotalGeneralExtrasCost();
         verify(reservation, times(1)).getTotalMealPlansCost();
     }
 
+    /**
+     * Make sure that the correct tax is calculated from the total cost excluding tax.
+     */
     @Test
     public void getTaxableAmount() {
         Reservation reservation = mock(Reservation.class);
+        // the method under test should not be mocked.
         when(reservation.getTaxableAmount()).thenCallRealMethod();
 
+        // mock the total cost without tax
         BigDecimal total = BigDecimal.valueOf(100);
         when(reservation.getTotalCostExcludingTax()).thenReturn(total);
+
+        // then apply the tax
         BigDecimal taxableAmount = total.multiply(BigDecimal.valueOf(Reservation.TAX_AMOUNT));
         assertThat(reservation.getTaxableAmount()).isEqualTo(taxableAmount);
 
+        // and make sure getTaxableAmount calls the correct method to base the tax amount off.
         verify(reservation, times(1)).getTotalCostExcludingTax();
     }
 
     @Test
     public void getTotalCostIncludingTax() {
         Reservation reservation = mock(Reservation.class);
+        // the method under test should not be mocked.
         when(reservation.getTotalCostIncludingTax()).thenCallRealMethod();
 
+        // the total cost without tax
         BigDecimal totalExcludingTax = BigDecimal.valueOf(121.60);
         when(reservation.getTotalCostExcludingTax()).thenReturn(totalExcludingTax);
 
+        // + the taxable amount derived from getTotalCostExcludingTax
         BigDecimal taxableAmount = BigDecimal.valueOf(20.60);
         when(reservation.getTaxableAmount()).thenReturn(taxableAmount);
 
+        // should equal the total cost including tax!
         assertThat(reservation.getTotalCostIncludingTax())
                 .isEqualTo(totalExcludingTax.add(taxableAmount));
 
+        // with the method under test calling the correct sub total methods to calculate the result
         verify(reservation, times(1)).getTotalCostExcludingTax();
         verify(reservation, times(1)).getTaxableAmount();
     }

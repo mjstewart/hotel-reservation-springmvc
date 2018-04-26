@@ -35,7 +35,7 @@ public class Hotel implements Serializable {
     private String email;
 
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL)
-    // Stop bidirectional relationship which causes a cycle.
+    // Stop bidirectional relationship which cause a cycle.
     @JsonIgnore
     private Set<Room> rooms;
 

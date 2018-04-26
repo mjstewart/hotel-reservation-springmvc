@@ -8,7 +8,7 @@
 
     <h1 th:text="${#request.getQueryString()}"></h1>
 
-    <h2 th:with="newQueryString=${#qs.getCurrentSortDirectionDesc(#request.getQueryString(), 'suburb')}"
+    <h2 th:with="newQueryString=${#qs.fieldSorterAsc(#request.getQueryString()).apply('location')}"
         th:text="${newQueryString}">
     </h2>
 

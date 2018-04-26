@@ -32,12 +32,12 @@ public class ReservationController {
     }
 
     /**
-     * Since {@code reservationFlowForms} is used in the {@code SessionAttributes} on the controller level, it informs
+     * Since {@code reservationFlow} is used in the {@code SessionAttributes} on the controller level, it informs
      * spring to treat our {@code ReservationFlow} as session scoped. This method will be invoked the very first
      * HTTP request to populate the session with the new object.
-     * <p>Subsequent HTTP requests will go directly to the handler and the statement {@code @ModelAttribute("reservationFlowForms")}
-     * will grab the object directly from the session.
-     *
+     * <p>Subsequent HTTP requests will go directly to the handler and the statement
+     * {@code @ModelAttribute("reservationFlow")} will grab the object directly from the session rather
+     * than recreating it.
      */
     @ModelAttribute("reservationFlow")
     public ReservationFlow getReservationFlow() {

@@ -10,11 +10,36 @@ import java.util.function.Function;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
+/**
+ *
+ */
 public class FlowMatchers {
 
     /**
      * Applies a mapping function on a {@code ReservationFlow} to produce a value {@code T}.
      * This value {@code T} is then fed into the {@code subMatcher} for the final assertion.
+     *
+     * <p></p>
+     * <p>Consider this example</p>
+     * <ol>
+     * <li>The {@code mapper} gets passed in the {@code ReservationFlow}.</li>
+     * <li>
+     * {@code flow -> flow.isCompleted(step)} ------> this result of true/false is fed into the sub matcher
+     * which then checks to see if the result of the mapping function is actually true.
+     * </li>
+     * </ol>
+     *
+     * <blockquote>
+     * <pre>
+     * public static ResultMatcher modelHasCompletedFlowStep(ReservationFlow.Step step) {
+     *       FeatureMatcher<ReservationFlow, Boolean> matcher = flowStateAssertion(
+     *       flow -> flow.isCompleted(step),
+     *       Matchers.is(Boolean.TRUE)
+     *       );
+     *       return model().attribute("reservationFlow", matcher);
+     * }
+     *     </pre>
+     * </blockquote>
      *
      * @param mapper     The mapping function.
      * @param subMatcher Asserts the value produced by the mapping function.
@@ -35,6 +60,7 @@ public class FlowMatchers {
      * Asserts the {@code Model} has the supplied {@code Step} as being completed.
      */
     public static ResultMatcher modelHasCompletedFlowStep(ReservationFlow.Step step) {
+        // flow -> flow.isCompleted(step)  (true/false) ----> feeds into the subMatcher
         FeatureMatcher<ReservationFlow, Boolean> matcher = flowStateAssertion(
                 flow -> flow.isCompleted(step),
                 Matchers.is(Boolean.TRUE)

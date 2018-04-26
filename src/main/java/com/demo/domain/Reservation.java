@@ -99,17 +99,19 @@ public class Reservation {
         }
     }
 
-    /**
-     * Remove a {@code Guest} by the pre saved temporary guest id.
-     *
-     * @return {@code true} if the {@code Guest} was removed.
-     */
-    public boolean removeGuestById(UUID guestId) {
-        return guests.removeIf(guest -> guest.getGuestId().equals(guestId));
-    }
-
     public void clearGuests() {
         guests.clear();
+    }
+
+    /**
+     * Allows UI to easily remove a {@code Guest} in the 'add guest' page. Its easier for the UI to 'POST' a guest id
+     * rather than provide the full {@code Guest} details that match {@code Guest.equals/hashCode}.
+     *
+     * @param guestId The temporarily assigned guest id.
+     * @return {@code true} if the {@code Guest} was removed otherwise {@code false}.
+     */
+    public boolean removeGuestById(UUID guestId) {
+        return guests.removeIf(guest -> guest.getTempId().equals(guestId));
     }
 
     public UUID getReservationId() {
@@ -120,11 +122,17 @@ public class Reservation {
         return generalExtras;
     }
 
+    /**
+     * All {@code Extra}s must be {@code Extra.Category.General} otherwise an IllegalArgumentException is thrown.
+     *
+     * @param generalExtras All {@code Extra}s must be {@code Extra.Category.General}.
+     * @throws IllegalArgumentException
+     */
     public void setGeneralExtras(Set<Extra> generalExtras) throws IllegalArgumentException {
         boolean containsInvalidCategories
                 = generalExtras.stream().anyMatch(extra -> extra.getCategory() != Extra.Category.General);
         if (containsInvalidCategories) {
-            throw new IllegalArgumentException("Contains non general extras.");
+            throw new IllegalArgumentException("Contains invalid categories that are not Extra.Category.General");
         }
         this.generalExtras = generalExtras;
     }
@@ -133,13 +141,10 @@ public class Reservation {
         return mealPlans;
     }
 
-    public void setMealPlans(Set<MealPlan> mealPlans) throws IllegalArgumentException {
-        boolean containsInvalidCategories = mealPlans.stream().flatMap(mealPlan -> mealPlan.getFoodExtras().stream())
-                .anyMatch(extra -> extra.getCategory() != Extra.Category.Food);
-
-        if (containsInvalidCategories) {
-            throw new IllegalArgumentException("Contains non food extras.");
-        }
+    /**
+     * @param mealPlans
+     */
+    public void setMealPlans(Set<MealPlan> mealPlans) {
         this.mealPlans = mealPlans;
     }
 
@@ -185,6 +190,9 @@ public class Reservation {
     }
 
     /**
+     * No late fee is considered.
+     * Provided separately to allow break down to sub totals on invoices.
+     *
      * @return Total nights * per night cost
      */
     public BigDecimal getTotalRoomCost() {
@@ -196,6 +204,8 @@ public class Reservation {
     }
 
     /**
+     * Provided separately to allow break down to sub totals on invoices.
+     *
      * @return {@link #getTotalRoomCost} + {@link #getChargeableLateCheckoutFee}
      */
     public BigDecimal getTotalRoomCostWithLateCheckoutFee() {
@@ -204,6 +214,7 @@ public class Reservation {
 
     /**
      * Calculates the total general extras cost.
+     * Provided separately to allow break down to sub totals on invoices.
      * <p>
      * {@code Daily extra cost * total nights}
      */
@@ -215,19 +226,9 @@ public class Reservation {
                 , BigDecimal::add
         );
     }
-//
-//    /**
-//     * @return The supplied {@code Extra} price multiplied by total nights stayed.
-//     */
-//    public BigDecimal getTotalGeneralExtraPrice(Extra extra) {
-//        if (extra.getCategory() != Extra.Category.General) {
-//            throw new IllegalArgumentException("Extra category is not General");
-//        }
-//        return extra.getTotalPrice(getTotalNights());
-//    }
-//
 
     /**
+     * Provided separately to allow break down to sub totals on invoices.
      * @return Total cost of all guests meal plans
      */
     public BigDecimal getTotalMealPlansCost() {
@@ -238,6 +239,7 @@ public class Reservation {
 
     /**
      * Total cost including everything!
+     * Provided separately to allow break down to sub totals on invoices.
      */
     public BigDecimal getTotalCostExcludingTax() {
         return getTotalRoomCostWithLateCheckoutFee()
@@ -246,12 +248,19 @@ public class Reservation {
     }
 
     /**
+     * Provided separately to allow break down to sub totals on invoices.
+     *
      * @return The taxable amount from the total cost. Eg 10% of $100 = $10.
      */
     public BigDecimal getTaxableAmount() {
         return getTotalCostExcludingTax().multiply(BigDecimal.valueOf(TAX_AMOUNT));
     }
 
+    /**
+     * Provided separately to allow break down to sub totals on invoices.
+     *
+     * @return The total cost including tax.
+     */
     public BigDecimal getTotalCostIncludingTax() {
         return getTotalCostExcludingTax().add(getTaxableAmount());
     }
@@ -334,4 +343,5 @@ public class Reservation {
                 "room=" + room +
                 '}';
     }
+
 }

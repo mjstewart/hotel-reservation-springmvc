@@ -24,7 +24,6 @@ public class MealPlan implements Serializable {
     @OneToOne
     private Reservation reservation;
 
-    // No CascadeType as Extra already has an id associated to it.
     @ManyToMany
     private List<Extra> foodExtras = new ArrayList<>();
 
@@ -38,7 +37,7 @@ public class MealPlan implements Serializable {
                     List<DietaryRequirement> dietaryRequirements) {
         this.guest = guest;
         this.reservation = reservation;
-        this.foodExtras = foodExtras;
+        setFoodExtras(foodExtras);
         this.dietaryRequirements = dietaryRequirements;
     }
 
@@ -71,6 +70,11 @@ public class MealPlan implements Serializable {
     }
 
     public void setFoodExtras(List<Extra> foodExtras) {
+        boolean containsInvalidCategories = foodExtras.stream()
+                .anyMatch(e -> e.getCategory() != Extra.Category.Food);
+        if (containsInvalidCategories) {
+            throw new IllegalArgumentException("Contains invalid categories that are not Extra.Category.Food");
+        }
         this.foodExtras = foodExtras;
     }
 

@@ -32,7 +32,7 @@ public class Extra {
     private Category category;
 
     /**
-     * Allows fine grain pricing control
+     * Allows different pricing models
      */
     public enum Type {
         Premium, Basic

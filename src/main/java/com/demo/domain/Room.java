@@ -30,7 +30,7 @@ public class Room {
     @Column(nullable = false)
     private BigDecimal costPerNight;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private Reservation reservation;
 
     public Room(String roomNumber, RoomType roomType, int beds, BigDecimal costPerNight) {
@@ -100,6 +100,10 @@ public class Room {
             this.reservation = reservation;
             reservation.setRoom(this);
         }
+    }
+
+    public boolean isReserved() {
+        return reservation != null;
     }
 
     @Override

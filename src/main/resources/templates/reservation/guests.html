@@ -37,12 +37,12 @@
                     <div class="two fields"
                          th:with="hasError=${#fields.hasErrors('firstName')}" th:classappend="${hasError} ? 'error'">
                         <div class="field">
-                            <input type="text" key="firstName" placeholder="First Name" th:field="*{firstName}">
+                            <input type="text" name="firstName" placeholder="First Name" th:field="*{firstName}">
                             <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{firstName}"></div>
                         </div>
                         <div class="field"
                              th:with="hasError=${#fields.hasErrors('lastName')}" th:classappend="${hasError} ? 'error'">
-                            <input type="text" key="lastName" placeholder="Last Name" th:field="*{lastName}">
+                            <input type="text" name="lastName" placeholder="Last Name" th:field="*{lastName}">
                             <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{lastName}"></div>
                         </div>
                     </div>
@@ -50,7 +50,7 @@
                     <div class="field"
                          th:with="hasError=${#fields.hasErrors('child')}" th:classappend="${hasError} ? 'error'">
                         <div class="ui checkbox">
-                            <input type="checkbox" key="child" id="childCheckbox" th:field="*{child}">
+                            <input type="checkbox" name="child" id="childCheckbox" th:field="*{child}">
                             <label for="childCheckbox">Child 12 years or younger</label>
                             <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{child}"></div>
                         </div>
@@ -61,8 +61,8 @@
                      th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
 
                 <div class="field">
-                    <button class="ui button" type="submit" key="back">Back</button>
-                    <button class="ui button" type="submit" key="addGuest">Add Guest</button>
+                    <button class="ui button" type="submit" name="back">Back</button>
+                    <button class="ui button" type="submit" name="addGuest">Add Guest</button>
                     <button class="ui button" type="submit">Next</button>
                 </div>
             </div>
@@ -87,7 +87,7 @@
                     <td><i th:if="${guest.child}" class="icon-large green check icon"></i></td>
                     <td>
                         <form id="deleteGuestForm" th:action="@{/reservation/guests}" method="post">
-                            <button class="ui button" type="submit" key="removeGuest" th:value="${guest.guestId}">Remove</button>
+                            <button class="ui button" type="submit" name="removeGuest" th:value="${guest.tempId}">Remove</button>
                         </form>
                     </td>
                 </tr>
