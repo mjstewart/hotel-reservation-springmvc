@@ -5,6 +5,7 @@ import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 public class Reservation {
@@ -41,8 +42,9 @@ public class Reservation {
     )
     private Set<Extra> generalExtras = new HashSet<>();
 
+    // List because the UI should display plans by Guest order.
     @OneToMany(cascade = CascadeType.ALL)
-    private Set<MealPlan> mealPlans = new HashSet<>();
+    private List<MealPlan> mealPlans = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL)
     public Set<Payment> attemptedPayments = new HashSet<>();
@@ -91,7 +93,7 @@ public class Reservation {
     /**
      * Add a guest only if the room has free beds.
      *
-     * @param guest
+     * @param guest The guest to add.
      */
     public void addGuest(Guest guest) {
         if (!isRoomFull()) {
@@ -137,23 +139,12 @@ public class Reservation {
         this.generalExtras = generalExtras;
     }
 
-    public Set<MealPlan> getMealPlans() {
+    public List<MealPlan> getMealPlans() {
         return mealPlans;
     }
 
-    /**
-     * @param mealPlans
-     */
-    public void setMealPlans(Set<MealPlan> mealPlans) {
+    public void setMealPlans(List<MealPlan> mealPlans) {
         this.mealPlans = mealPlans;
-    }
-
-    public void resetMealPlans() {
-        mealPlans = new HashSet<>();
-    }
-
-    public void resetExtras() {
-        generalExtras = new HashSet<>();
     }
 
     public ReservationDates getDates() {
@@ -252,6 +243,7 @@ public class Reservation {
 
     /**
      * Provided separately to allow break down to sub totals on invoices.
+     *
      * @return Total cost of all guests meal plans
      */
     public BigDecimal getTotalMealPlansCost() {
@@ -287,7 +279,22 @@ public class Reservation {
     public BigDecimal getTotalCostIncludingTax() {
         return getTotalCostExcludingTax().add(getTaxableAmount());
     }
-//
+
+
+    /**
+     * Creates a new {@code MealPlan} for each {@code Guest} and assigns the result to the internal {@code mealPlans}
+     * instance variable.
+     *
+     * <p>The reason this modifies internal state is to ensure all the {@code MealPlan}s are setup in sorted
+     * order ready to be binded to dynamic fields in thymeleaf template.</p>
+     */
+    public void createMealPlans() {
+        mealPlans = guests.stream()
+                .map(guest -> new MealPlan(guest, this))
+                .sorted(Comparator.comparing(MealPlan::getGuest, Guest.comparator()))
+                .collect(Collectors.toList());
+    }
+
 //    /**
 //     * Useful for UI template rendering.
 //     *

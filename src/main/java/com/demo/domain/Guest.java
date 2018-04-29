@@ -5,6 +5,7 @@ import com.demo.util.Utils;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -75,6 +76,15 @@ public class Guest {
 
     public UUID getTempId() {
         return tempId;
+    }
+
+    /**
+     * @return A {@code Comparator} that orders adults first then by firstName then lastName.
+     */
+    public static Comparator<Guest> comparator() {
+        return Comparator.comparing(Guest::isChild, Boolean::compareTo)
+                .thenComparing(Guest::getFirstName)
+                .thenComparing(Guest::getLastName);
     }
 
     /**

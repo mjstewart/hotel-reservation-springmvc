@@ -25,12 +25,16 @@ public class MealPlan implements Serializable {
     private Reservation reservation;
 
     @ManyToMany
-    private List<Extra> foodExtras = new ArrayList<>();
+    private List<Extra> foodExtras;
 
     @ElementCollection
-    private List<DietaryRequirement> dietaryRequirements = new ArrayList<>();
+    private List<DietaryRequirement> dietaryRequirements;
 
     public MealPlan() {
+    }
+
+    public MealPlan(Guest guest, Reservation reservation) {
+        this(guest, reservation, new ArrayList<>(), new ArrayList<>());
     }
 
     public MealPlan(Guest guest, Reservation reservation, List<Extra> foodExtras,

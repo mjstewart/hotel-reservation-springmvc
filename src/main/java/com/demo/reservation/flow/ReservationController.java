@@ -1,10 +1,7 @@
 package com.demo.reservation.flow;
 
 import com.demo.TimeProvider;
-import com.demo.domain.Extra;
-import com.demo.domain.Guest;
-import com.demo.domain.ReservationDates;
-import com.demo.domain.Room;
+import com.demo.domain.*;
 import com.demo.exceptions.NotFoundException;
 import com.demo.persistance.RoomRepository;
 import com.demo.reservation.ExtraRepository;
@@ -129,8 +126,8 @@ public class ReservationController {
     }
 
     @PostMapping(value = "/reservation/guests", params = "back")
-    public String postGuestFormGoBack(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
-                                      RedirectAttributes redirectAttributes) {
+    public String fromGuestBackToDates(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                       RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("reservationFlow", reservationFlow);
         return "redirect:/reservation?roomId=" + reservationFlow.getReservation().getRoom().getId();
     }
@@ -215,8 +212,8 @@ public class ReservationController {
     }
 
     @PostMapping(value = "/reservation/extras", params = "back")
-    public String goBackFromGeneralExtrasToGuests(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
-                                                  RedirectAttributes ra) {
+    public String fromGeneralExtrasBackToGuests(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                                RedirectAttributes ra) {
         ra.addFlashAttribute("reservationFlow", reservationFlow);
         return "redirect:/reservation/guests";
     }
@@ -233,25 +230,35 @@ public class ReservationController {
 
     @PostMapping(value = "/reservation/extras", params = "add")
     public String submitGeneralExtrasAjax(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow) {
-        System.out.println("submitGeneralExtrasAjax");
-        System.out.println(reservationFlow.getReservation().getGeneralExtras());
         return "reservation/fragments :: quickSummary";
     }
 
 
     // Flow step 4 - meals
 
-    @GetMapping("/reservation/meals")
-    public String getMeals() {
-        return "reservation/meals";
+    @PostMapping(value = "/reservation/meals", params = "back")
+    public String fromMealPlansBackToGeneralExtras(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                                   RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Meals);
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        return "redirect:/reservation/extras";
     }
 
+    @GetMapping("/reservation/meals")
+    public String getMealPlans(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow, Model model) {
+        reservationFlow.setActive(ReservationFlow.Step.Meals);
 
+        reservationFlow.getReservation().createMealPlans();
 
+        List<Extra> foodExtras = extraRepository.findAllByTypeAndCategory(
+                reservationFlow.getReservation().getExtraPricingType(),
+                Extra.Category.Food
+        );
+        model.addAttribute("foodExtras", foodExtras);
+        model.addAttribute("dietaryRequirements", DietaryRequirement.values());
 
-
-
-
+        return "reservation/meals";
+    }
 
 
     @GetMapping("/drinks")
@@ -268,7 +275,6 @@ public class ReservationController {
 
         return "reservation/drinks";
     }
-
 
 
     @PostMapping("/drinks")

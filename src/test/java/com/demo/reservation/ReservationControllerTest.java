@@ -24,10 +24,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.demo.GlobalErrorMatchers.globalErrorMatchers;
 import static com.demo.reservation.flow.forms.FlowMatchers.*;
@@ -104,6 +102,7 @@ public class ReservationControllerTest {
      * <ul>
      * <li>Step 1 - ReservationDates = completed</li>
      * <li>Step 2 - Guests = completed</li>
+     * <li>Step 3 - General extras = pending</li>
      * </ul>
      */
     private ReservationFlow guestCompletedFlow() {
@@ -122,6 +121,7 @@ public class ReservationControllerTest {
      * <li>Step 1 - ReservationDates = completed</li>
      * <li>Step 2 - Guests = completed</li>
      * <li>Step 3 - Extras = completed</li>
+     * <li>Step 4 - Meal Plans = pending</li>
      * </ul>
      */
     private ReservationFlow extrasCompletedFlow() {
@@ -129,6 +129,27 @@ public class ReservationControllerTest {
         reservationFlow.getReservation().setGeneralExtras(
                 Set.of(new Extra("foxtel", BigDecimal.valueOf(4.5), Extra.Type.Premium, Extra.Category.General))
         );
+        return reservationFlow;
+    }
+
+    /**
+     * Creates a {@code ReservationFlow} in the expected state after completing the general extras form. This is the starting
+     * state for the review form. This will enable quickly rebuilding the current reservation flow state up to the
+     * current flow state under test. Note how the {@code ReservationFlow.activeStep} is not set since this will be tested.
+     * <ul>
+     * <li>Step 1 - ReservationDates = completed</li>
+     * <li>Step 2 - Guests = completed</li>
+     * <li>Step 3 - General extras = completed</li>
+     * <li>Step 4 - Meal plans = completed</li>
+     * <li>Step 5 - Review = pending</li>
+     * </ul>
+     */
+    private ReservationFlow mealsCompletedFlow() {
+        ReservationFlow reservationFlow = extrasCompletedFlow();
+        reservationFlow.getReservation().createMealPlans();
+
+        // As per above in guestCompletedFlow, there is 1 guest but lets just assume they don't select
+        // a meal plan so its left empty.
         return reservationFlow;
     }
 
@@ -375,7 +396,7 @@ public class ReservationControllerTest {
      * GET date form is called.
      */
     @Test
-    public void postGuestFormGoBack_GoBackToDateView_RedirectsCorrectView() throws Exception {
+    public void fromGuestBackToDates_GoBackToDateView_RedirectsCorrectView() throws Exception {
         ReservationFlow reservationFlow = dateCompletedFlow();
         Long roomId = reservationFlow.getReservation().getRoom().getId();
 
@@ -684,6 +705,9 @@ public class ReservationControllerTest {
     // Flow step 3 - extras
 
     /**
+     * Assert that the Model contains the expected general extras fetched from repository and it
+     * contains the reservationFlow from the session. Also ensure the reservationFlow step is on
+     * Extras.
      */
     @Test
     public void getGeneralExtrasForm_HasValidStartingState() throws Exception {
@@ -713,7 +737,7 @@ public class ReservationControllerTest {
      * during the redirect.
      */
     @Test
-    public void goBackFromGeneralExtrasToGuests_RedirectsCorrectView() throws Exception {
+    public void fromGeneralExtrasBackToGuests_RedirectsCorrectView() throws Exception {
         ReservationFlow reservationFlow = guestCompletedFlow();
 
         mockMvc.perform(post("/reservation/extras")
@@ -727,13 +751,13 @@ public class ReservationControllerTest {
      * When the selected general extras are submitted, check the flow step is completed for Extras and
      * we redirect to the next meal view. flash attributes are needed so the Model state is not lost
      * across the redirect.
-     *
+     * <p>
      * We cant test for checking extras are added to the reservation since all of that happens
      * using spring binding infrastructure so would need to make an integration test for that using
      * {@literal @SpringBootTest}.
      */
     @Test
-    public void submitGeneralExtras_HasCorrectViewAndStep() throws Exception {
+    public void submitGeneralExtras_RedirectsToCorrectViewAndStep() throws Exception {
         ReservationFlow reservationFlow = guestCompletedFlow();
 
         mockMvc.perform(post("/reservation/extras")
@@ -744,4 +768,77 @@ public class ReservationControllerTest {
                 .andExpect(flash().attributeExists("reservationFlow"));
     }
 
+
+    // Flow step 4 - meal plans
+
+    /**
+     * Redirects to general extras form when in the meal plans form. Note the flash attributes
+     * used are so the Model is not lost between redirects.
+     */
+    @Test
+    public void fromMealPlansBackToGeneralExtras() throws Exception {
+        ReservationFlow reservationFlow = extrasCompletedFlow();
+
+        mockMvc.perform(post("/reservation/meals")
+                .param("back", "")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("redirect:/reservation/extras"))
+                .andExpect(flash().attributeExists("reservationFlow"));
+    }
+
+    /**
+     * Assert that the Model contains the expected objects required for template generation.
+     * Since creating meal plans is quite complex we need
+     * <ul>
+     * <li>foodExtras: Each guest will be able to select an extra which will be added to
+     * their {@code MealPlan}
+     * </li>
+     * <li>dietaryRequirements: Each guest will be able to select a dietary requirement which
+     * will be added to their {@code MealPlan}
+     * </li>
+     * <li>Sanity check to ensure each guest has a meal plan created ready to be binded to the thymeleaf view.</li>
+     * <li>reservationFlow: The reservationFlow must still be kept in the Model to continue to stay in the Session.</li>
+     * </ul>
+     * <p>
+     */
+    @Test
+    public void getMeals_HasValidStartingState() throws Exception {
+        ReservationFlow reservationFlow = extrasCompletedFlow();
+
+        // A part of a meal plan, guests can choose 3 main daily meals
+        List<Extra> foodExtras = List.of(
+                new Extra("breakfast", BigDecimal.valueOf(3.20), Extra.Type.Basic, Extra.Category.Food),
+                new Extra("lunch", BigDecimal.valueOf(5.40), Extra.Type.Basic, Extra.Category.Food),
+                new Extra("dinner", BigDecimal.valueOf(8.90), Extra.Type.Basic, Extra.Category.Food)
+        );
+
+        // Make sure createMealPlans is called.
+        Reservation reservationSpy = spy(reservationFlow.getReservation());
+        reservationFlow.setReservation(reservationSpy);
+
+        // So we can verify the correct call to get the food extras occurs.
+        when(extraRepository.findAllByTypeAndCategory(any(Extra.Type.class), eq(Extra.Category.Food)))
+                .thenReturn(foodExtras);
+
+        ResultMatcher expectedMealPlansCreated = model().attribute("reservationFlow",
+                Matchers.hasProperty("reservation",
+                        Matchers.hasProperty("mealPlans",
+                                Matchers.hasSize(reservationFlow.getReservation().getGuests().size()))));
+
+        mockMvc.perform(get("/reservation/meals")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("reservation/meals"))
+                .andExpect(model().attribute("foodExtras", Matchers.equalTo(foodExtras)))
+                .andExpect(model().attributeExists("dietaryRequirements"))
+                .andExpect(model().attributeExists("reservationFlow"))
+                .andExpect(expectedMealPlansCreated)
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Meals))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Meals));
+
+        verify(extraRepository, times(1))
+                .findAllByTypeAndCategory(any(Extra.Type.class), eq(Extra.Category.Food));
+        verifyNoMoreInteractions(extraRepository);
+
+        verify(reservationSpy, times(1)).createMealPlans();
+    }
 }

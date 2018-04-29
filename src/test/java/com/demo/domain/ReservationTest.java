@@ -508,7 +508,7 @@ public class ReservationTest {
 
         BigDecimal expectedCost = expectedMealPlan1Cost.add(expectedMealPlan2Cost);
 
-        reservation.setMealPlans(Set.of(mealPlan1, mealPlan2));
+        reservation.setMealPlans(List.of(mealPlan1, mealPlan2));
 
         assertThat(reservation.getTotalMealPlansCost()).isEqualTo(expectedCost);
     }
@@ -579,5 +579,55 @@ public class ReservationTest {
         // with the method under test calling the correct sub total methods to calculate the result
         verify(reservation, times(1)).getTotalCostExcludingTax();
         verify(reservation, times(1)).getTaxableAmount();
+    }
+
+
+    /**
+     * Reservation.mealPlans should contain a list of {@code MealPlan}s created for each {@code Guest}.
+     * In this test when there are no guests there should be no meal plans created.
+     */
+    @Test
+    public void createMealPlans_NoGuestsExists_EmptyMealPlans() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+        room.setBeds(2);
+        reservation.setRoom(room);
+
+        reservation.createMealPlans();
+        assertThat(reservation.getMealPlans()).isEmpty();
+    }
+
+    /**
+     * Reservation.mealPlans should contain a list of {@code MealPlan}s created for each {@code Guest}
+     * which are ordered by the rules in {@code Guest.comparator} for display in thymeleaf template.
+     */
+    @Test
+    public void createMealPlans_GuestsExists_MealPlansInCorrectOrder() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+
+        // create room for 4 guests
+        room.setBeds(4);
+        reservation.setRoom(room);
+
+        Guest guestA = new Guest("a", "e", true);
+        reservation.addGuest(guestA);
+        Guest guestB = new Guest("b", "g", false);
+        reservation.addGuest(guestB);
+        Guest guestC = new Guest("b", "f", false);
+        reservation.addGuest(guestC);
+        Guest guestD = new Guest("a", "c", true);
+        reservation.addGuest(guestD);
+
+        reservation.createMealPlans();
+
+        reservation.getMealPlans().stream()
+                .map(MealPlan::getGuest)
+                .forEach(System.out::println);
+
+        // child should be ordered last, tie between first name to be broken be ascending last name.
+        assertThat(reservation.getMealPlans())
+                .extracting(MealPlan::getGuest)
+                .containsExactly(guestC, guestB, guestD, guestA);
     }
 }
