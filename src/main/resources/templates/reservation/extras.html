@@ -5,8 +5,48 @@
 <body>
 
 <div layout:fragment="main">
-    <div>
-        <h3 class="ui dividing header" th:text="${reservationFlow.getActiveStepDescription().getDescription()}"></h3>
+
+    <div class="ui info message" th:if="${extras.isEmpty()}">
+        Sorry, this hotel has no available rooms.
+    </div>
+
+    <div class="ui top attached segment" th:unless="${extras.isEmpty()}">
+        <div class="ui top attached label"
+             th:text="${reservationFlow.getActiveStepDescription().getDescription()}"></div>
+
+        <form id="form" class="ui form" th:action="@{/reservation/extras}" method="post" th:object="${reservationFlow.reservation}">
+            <div class="field">
+                <table class="ui sortable celled table"
+                       th:with="totalNights=${reservationFlow.reservation.dates.totalNights()}">
+                    <thead>
+                    <tr>
+                        <th>Extra</th>
+                        <th>Cost per night</th>
+                        <th th:text="|Total cost (${totalNights} ${totalNights == 1 ? 'night' : 'nights'})|"></th>
+                        <th>Select</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="extra,stat : ${extras}">
+                        <td th:text="${extra.description}"></td>
+                        <td th:text="${#numbers.formatCurrency(extra.perNightPrice)}"></td>
+                        <td th:text="${#numbers.formatCurrency(extra.getTotalPrice(totalNights))}"></td>
+                        <td>
+                            <div class="ui checkbox">
+                                <input type="checkbox" th:field="*{generalExtras}" th:value="${extra.id}">
+                                <label></label>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="field">
+                <button class="ui button" type="submit" name="back">Back</button>
+                <button class="ui button" type="submit">Next</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -16,7 +56,23 @@
 
         $(document).ready(function () {
             registerOnSubmitHandler("form");
+            $("input[name='reservation.generalExtras']").click(updateQuickSummary)
         });
+
+        function updateQuickSummary() {
+            const url = '/reservation/extras?add';
+            const data = $("#form").serialize();
+
+            enhancedAjaxHandler('Updating costs', function(onSuccess) {
+                $.post(url, data, function (newQuickSummary) {
+                    onSuccess();
+                    $("#quickSummary").replaceWith(newQuickSummary);
+                }).fail(function () {
+                    showErrorModal('Unable to update room prices due to server error');
+                });
+            });
+        }
+
 
     </script>
 </th:block>

@@ -43,6 +43,39 @@ public class ReservationTest {
         assertThat(reservation.isRoomFull()).isTrue();
     }
 
+    @Test
+    public void hasGuests() {
+        Room room = createRoom();
+        room.setBeds(2);
+
+        Reservation reservation = new Reservation();
+        reservation.setRoom(room);
+
+        assertThat(reservation.hasGuests()).isFalse();
+
+        reservation.addGuest(new Guest("marie", "smith", false));
+        assertThat(reservation.hasGuests()).isTrue();
+    }
+
+    @Test
+    public void hasAtLeastOneAdultGuest() {
+        Room room = createRoom();
+        room.setBeds(2);
+
+        Reservation reservation = new Reservation();
+        reservation.setRoom(room);
+
+        assertThat(reservation.hasAtLeastOneAdultGuest()).isFalse();
+
+        reservation.addGuest(new Guest("marie", "smith", true));
+
+        assertThat(reservation.hasAtLeastOneAdultGuest()).isFalse();
+
+        reservation.addGuest(new Guest("marie", "smith", false));
+
+        assertThat(reservation.hasAtLeastOneAdultGuest()).isTrue();
+    }
+
     /**
      * You should not be able to add a guest to a room that is already full.
      */
@@ -106,6 +139,62 @@ public class ReservationTest {
         reservation.setGeneralExtras(generalExtras);
 
         assertThat(reservation.getGeneralExtras()).isEqualTo(generalExtras);
+    }
+
+    /**
+     * When the room is luxury, {@code Extra.Type.Premium} is the type to base food and general extras charging from.
+     */
+    @Test
+    public void getExtraPricingType_LuxuryRoomIsPremium() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+        room.setRoomType(RoomType.Luxury);
+
+        reservation.setRoom(room);
+
+        assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Premium);
+    }
+
+    /**
+     * When the room is business, {@code Extra.Type.Premium} is the type to base food and general extras charging from.
+     */
+    @Test
+    public void getExtraPricingType_BusinessRoomIsPremium() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+        room.setRoomType(RoomType.Business);
+
+        reservation.setRoom(room);
+
+        assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Premium);
+    }
+
+    /**
+     * When the room is Balcony, {@code Extra.Type.Basic} is the type to base food and general extras charging from.
+     */
+    @Test
+    public void getExtraPricingType_BalconyRoomIsBasic() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+        room.setRoomType(RoomType.Balcony);
+
+        reservation.setRoom(room);
+
+        assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Basic);
+    }
+
+    /**
+     * When the room is Economy, {@code Extra.Type.Basic} is the type to base food and general extras charging from.
+     */
+    @Test
+    public void getExtraPricingType_EconomyRoomIsBasic() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+        room.setRoomType(RoomType.Economy);
+
+        reservation.setRoom(room);
+
+        assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Basic);
     }
 
     /**

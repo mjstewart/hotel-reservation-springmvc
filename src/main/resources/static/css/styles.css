@@ -31,6 +31,10 @@ html, body {
     font-weight: bold;
 }
 
+.margin-top-5 {
+    margin-top: 5px !important;
+}
+
 .margin-top-10 {
     margin-top: 10px !important;
 }
@@ -92,16 +96,16 @@ html, body {
     padding: 2px 0 2px 0;
 }
 
-.underline-table-row {
-    border-bottom: 1px solid rgba(34,36,38,.15) !important;
-}
-
 #quickSummaryDates p {
     margin: 2px 0 2px 0 !important;
 }
 
+.underline-table-row {
+    border-bottom: 1px solid rgba(34,36,38,.15) !important;
+}
+
 .main__content-group {
-    margin-bottom: 50px !important;
+    margin-bottom: 30px !important;
 }
 
 .main__content-group:last-child {
@@ -115,4 +119,12 @@ html, body {
     align-items: center;
     height: 400px;
     width: 80%;
+}
+
+.meta-table .row {
+    padding: 2px 0 2px 0 !important;
+}
+
+.meta-table__header {
+    font-weight: bold;
 }

@@ -4,6 +4,7 @@ import com.demo.domain.*;
 import com.demo.domain.location.Address;
 import com.demo.domain.location.Postcode;
 import com.demo.domain.location.State;
+import com.demo.persistance.predicates.RoomPredicates;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

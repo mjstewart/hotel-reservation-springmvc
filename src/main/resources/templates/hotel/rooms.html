@@ -4,35 +4,181 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
 <body>
 <div layout:fragment="content">
-    <table class="ui celled table">
+
+    <div class="ui breadcrumb">
+        <a class="section" href="#" onclick="history.go(-1)" th:text="|Hotel search - ${hotel.name}|"></a>
+        <i class="right angle icon divider"></i>
+        <div class="active section" th:text="|Available rooms (${rooms.getTotalElements()})|"></div>
+    </div>
+
+    <div class="ui info message" th:if="${rooms.getTotalElements() == 0}">
+        Sorry, this hotel has no available rooms.
+    </div>
+
+    <div class="ui top attached segment">
+        <div class="ui top attached label">Hotel Summary</div>
+        <div class="ui basic segment">
+            <div class="ui two column grid meta-table">
+                <div class="row">
+                    <div class="two wide column">
+                        <p class="meta-table__header">Hotel</p>
+                    </div>
+                    <div class="fourteen wide column">
+                        <a th:href="@{/hotel(id=${hotel.id})}" th:text="${hotel.name}"></a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="two wide column">
+                        <p class="meta-table__header">Rating</p>
+                    </div>
+                    <div class="fourteen wide column">
+                        <div class="ui star rating disabled" th:each="star : ${#numbers.sequence(1, hotel.stars)}">
+                            <i class="icon active"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="two wide column">
+                        <p class="meta-table__header">Street</p>
+                    </div>
+                    <div class="fourteen wide column" th:text="${hotel.address.streetLine1}"></div>
+                </div>
+                <div class="row" th:unless="${#strings.isEmpty(hotel.address.streetLine2)}">
+                    <div class="two wide column">
+                        <p class="meta-table__header">Street Line 2</p>
+                    </div>
+                    <div class="fourteen wide column" th:text="${hotel.address.streetLine2}"></div>
+                </div>
+                <div class="row">
+                    <div class="two wide column">
+                        <p class="meta-table__header">State</p>
+                    </div>
+                    <div class="fourteen wide column" th:text="${hotel.address.state}"></div>
+                </div>
+                <div class="row">
+                    <div class="two wide column">
+                        <p class="meta-table__header">Suburb</p>
+                    </div>
+                    <div class="fourteen wide column" th:text="${hotel.address.suburb}"></div>
+                </div>
+                <div class="row">
+                    <div class="two wide column">
+                        <p class="meta-table__header">Postcode</p>
+                    </div>
+                    <div class="fourteen wide column" th:text="${hotel.address.postcode.value}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="ui sortable celled table" th:unless="${rooms.getTotalElements() == 0}"
+           th:with="qstring=${#request.getQueryString()},
+                 urlBuilder=${#qs.urlBuilder(#request.getRequestURI())},
+                 fieldSorterAsc=${#qs.fieldSorterAsc(qstring)},
+                 fieldSorterDesc=${#qs.fieldSorterDesc(qstring)},
+                 cssWhenFieldIsAsc=${#qs.valueWhenMatchesSortAsc(qstring, '', 'sorted ascending', 'sorted descending')}">
         <thead>
-            <tr>
-                <th>Hotel</th>
-                <th>Room Number</th>
-                <th>Room Type</th>
-                <th># Beds</th>
-                <th>Cost per night</th>
-                <th>Book</th>
-            </tr>
+        <tr>
+            <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('roomNumber'))}"
+                th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                th:classappend="${cssWhenFieldIsAsc.apply('roomNumber')}"
+                th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort room number A to Z',
+                                 'Sort room number Z to A',
+                                 'Sort room number A to Z').apply('roomNumber')}">
+                Room Number
+            </th>
+            <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('roomType'))}"
+                th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                th:classappend="${cssWhenFieldIsAsc.apply('roomType')}"
+                th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort room type A to Z',
+                                 'Sort room type Z to A',
+                                 'Sort room type A to Z').apply('roomType')}">
+                Room Type
+            </th>
+            <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('beds'))}"
+                th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                th:classappend="${cssWhenFieldIsAsc.apply('beds')}"
+                th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort total beds lowest to highest',
+                                 'Sort total beds highest to lowest',
+                                 'Sort total beds lowest to highest').apply('beds')}">
+                # Beds
+            </th>
+            <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('costPerNight'))}"
+                th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                th:classappend="${cssWhenFieldIsAsc.apply('costPerNight')}"
+                th:title="${#qs.valueWhenMatchesSortAsc(qstring,
+                                 'Sort cost per night lowest to highest',
+                                 'Sort cost per night highest to lowest',
+                                 'Sort cost per night lowest to highest').apply('costPerNight')}">
+                Cost per night
+            </th>
+            <th>Book</th>
+        </tr>
         </thead>
         <tbody>
-            <tr th:each="room,stat : ${rooms}">
-                <td>
-                    <a th:href="@{/hotel(id=${room.hotel.id})}" th:text="${room.hotel.getName()}"></a>
-                </td>
-                <td th:text="${room.roomNumber}"></td>
-                <td th:text="${room.roomType}"></td>
-                <td th:text="${room.beds}"></td>
-                <td th:text="${#numbers.formatCurrency(room.costPerNight)}"></td>
-                <td>
-                    <a th:href="@{/reservation(roomId=${room.id})}">Book</a>
-                </td>
-            </tr>
+        <tr th:each="room,stat : ${rooms.getContent()}">
+            <td th:text="${room.roomNumber}"></td>
+            <td th:text="${room.roomType}"></td>
+            <td th:text="${room.beds}"></td>
+            <td th:text="${#numbers.formatCurrency(room.costPerNight)}"></td>
+            <td>
+                <a th:href="@{/reservation(roomId=${room.id})}">Book</a>
+            </td>
+        </tr>
         </tbody>
+
+        <tfoot th:with="lastPage=${rooms.getTotalPages() - 1},
+                            pageNumber=${rooms.getPageable().getPageNumber()},
+                            isOnLastPage=${pageNumber == lastPage}">
+
+        <tr>
+            <th colspan="6">
+                <span class="margin-right-10" th:text="|${pageNumber + 1} of ${rooms.getTotalPages()}|"></span>
+
+                <div class="ui pagination menu">
+                    <a class="icon item"
+                       th:if="${rooms.getPageable().hasPrevious()}"
+                       th:with="newQueryString=${#qs.resetPageNumber(qstring)}"
+                       th:href="${urlBuilder.apply(newQueryString)}"
+                       th:title="|Go to first page - (page ${#qs.getPageNumber(newQueryString)})|">
+                        <i class="angle double left icon"></i>
+                    </a>
+                    <a class="icon item"
+                       th:if="${rooms.getPageable().hasPrevious()}"
+                       th:with="newQueryString=${#qs.decrementPage(qstring)}"
+                       th:href="${urlBuilder.apply(newQueryString)}"
+                       th:title="|Previous page - (page ${#qs.getPageNumber(newQueryString)})|">
+                        <i class="left chevron icon"></i>
+                    </a>
+                    <a class="icon item"
+                       th:unless="${isOnLastPage}"
+                       th:with="newQueryString=${#qs.incrementPage(qstring, lastPage)}"
+                       th:href="${urlBuilder.apply(newQueryString)}"
+                       th:title="|Next page - (page ${#qs.getPageNumber(newQueryString)})|">
+                        <i class="right chevron icon"></i>
+                    </a>
+                    <a class="icon item"
+                       th:unless="${isOnLastPage}"
+                       th:with="newQueryString=${#qs.setPageNumber(qstring, lastPage)}"
+                       th:href="${urlBuilder.apply(newQueryString)}"
+                       th:title="|Go to last page - (page ${lastPage})|">
+                        <i class="angle double right icon"></i>
+                    </a>
+                </div>
+            </th>
+        </tr>
+        </tfoot>
     </table>
 </div>
 <th:block layout:fragment="script">
-
+    <script>
+        function onSortChange(url) {
+            window.location = url;
+        }
+    </script>
 </th:block>
 
 </body>

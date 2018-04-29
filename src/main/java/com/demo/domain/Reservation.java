@@ -168,6 +168,29 @@ public class Reservation {
         return guests.size() >= room.getBeds();
     }
 
+    public boolean hasGuests() {
+        return !guests.isEmpty();
+    }
+
+    public boolean hasAtLeastOneAdultGuest() {
+        return guests.stream().anyMatch(guest -> !guest.isChild());
+    }
+
+    /**
+     * Calculates {@code Extra.Type} to correctly charge the food and general extras.
+     *
+     * @return Depending on the room type, return {@code Extra.Type.Premium/Basic}.
+     */
+    public Extra.Type getExtraPricingType() {
+        switch (room.getRoomType()) {
+            case Luxury:
+            case Business:
+                return Extra.Type.Premium;
+            default:
+                return Extra.Type.Basic;
+        }
+    }
+
     /**
      * Calculates the chargeable late fee price only if the user has selected the late checkout option.
      */

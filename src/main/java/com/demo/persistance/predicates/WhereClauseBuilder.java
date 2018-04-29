@@ -1,10 +1,9 @@
-package com.demo.persistance;
+package com.demo.persistance.predicates;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Visitor;
 
-import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 public class WhereClauseBuilder implements Predicate {
@@ -28,9 +27,8 @@ public class WhereClauseBuilder implements Predicate {
         return delegate.not();
     }
 
-    @Nullable
     @Override
-    public <R, C> R accept(Visitor<R, C> v, @Nullable C context) {
+    public <R, C> R accept(Visitor<R, C> v, C context) {
         return delegate.accept(v, context);
     }
 

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" >
+<body>
+
+<div class="ui top attached segment">
+    <div class="ui top attached label">Drink demo</div>
+
+    <form class="ui form" th:action="@{/drinks}" method="post" th:object="${person}">
+        <ul>
+            <li th:each="drink : ${selectableDrinks}">
+                <div class="ui checkbox">
+                    <input type="checkbox" th:field="*{drinks}" th:value="${drink.id}">
+                    <label th:text="${drink.name}"></label>
+                </div>
+            </li>
+        </ul>
+
+        <div class="field">
+            <button class="ui button" type="submit">Submit</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

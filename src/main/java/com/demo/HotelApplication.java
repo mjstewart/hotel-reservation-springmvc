@@ -4,7 +4,6 @@ import com.github.mjstewart.querystring.dialect.QueryStringDialect;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
 
 @SpringBootApplication
 public class HotelApplication {

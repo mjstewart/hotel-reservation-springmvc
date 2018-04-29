@@ -1,4 +1,4 @@
-package com.demo.persistance;
+package com.demo.persistance.predicates;
 
 import com.demo.domain.QHotel;
 import com.demo.domain.location.QAddress;

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{/reservation/reservation-layout}">
+<body>
+
+<div layout:fragment="main">
+
+    <h1>meals</h1>
+</div>
+
+
+<th:block layout:fragment="script">
+    <script>
+
+        $(document).ready(function () {
+            registerOnSubmitHandler("form");
+        });
+
+    </script>
+</th:block>
+
+</body>
+</html>

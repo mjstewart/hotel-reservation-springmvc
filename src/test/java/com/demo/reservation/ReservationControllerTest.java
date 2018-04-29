@@ -24,7 +24,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.demo.GlobalErrorMatchers.globalErrorMatchers;
@@ -37,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Tests for the reservation booking flow.
+ * Note: tests only look at the current {@code ReservationFlow.activeStep} with the assumption previous steps have
+ * completed since we are testing individual flow steps, not going through the wizard from start to finish in 1 test.
  */
 @RunWith(SpringRunner.class)
 @WebMvcTest(ReservationController.class)
@@ -50,6 +54,9 @@ public class ReservationControllerTest {
     private RoomRepository roomRepository;
 
     @MockBean
+    private ExtraRepository extraRepository;
+
+    @MockBean
     private TimeProvider timeProvider;
 
     private Room createRoom() {
@@ -58,38 +65,28 @@ public class ReservationControllerTest {
 
         Hotel hotel = new Hotel("Hotel Royal", address, 3, "royal@hotel.com");
         Room room = new Room("ABC123", RoomType.Economy, 4, BigDecimal.valueOf(23.50));
+        room.setId(2L);
         room.setHotel(hotel);
         return room;
     }
 
     /**
-     * Creates a {@code ReservationFlow} in the expected state for entering in the reservation dates.
-     * This will enable quickly rebuilding the current reservation flow state up to the current flow state under test.
-     *
-     * <p>ReservationDates is empty ready to bind to the new ReservationDates form.</p>
+     * Creates a {@code ReservationFlow} containing a {@code Reservation} in the expected state for entering
+     * in the reservation dates. This corresponds to the starting {@code Reservation} state when the date form is first
+     * retrieved from server. Note how the {@code ReservationFlow.activeStep} is not set since this will be tested.
      */
-    private ReservationFlow toDateFlow() {
+    private ReservationFlow pendingDateFlow() {
         ReservationFlow reservationFlow = new ReservationFlow();
         reservationFlow.getReservation().setRoom(createRoom());
-        reservationFlow.setActive(ReservationFlow.Step.Dates);
         return reservationFlow;
     }
 
     /**
-     * Creates a {@code ReservationFlow} in the expected state for entering in guest details.
-     * This will enable quickly rebuilding the current reservation flow state up to the current flow state under test.
-     *
-     * <ul>
-     * <li>Step 1 - ReservationDates = valid</li>
-     * <li>Step 2 - Guests - empty ready to bind to the new guest form.</li>
-     * </ul>
+     * Creates a {@code ReservationFlow} containing a {@code Reservation} in the expected state after successfully
+     * posting the reservation date form. This is the starting state for the Guest form.
      */
-    private ReservationFlow toGuestFlow() {
-        ReservationFlow reservationFlow = new ReservationFlow();
-        reservationFlow.getReservation().setRoom(createRoom());
-
-        reservationFlow.completeStep(ReservationFlow.Step.Dates);
-        reservationFlow.setActive(ReservationFlow.Step.Guests);
+    private ReservationFlow dateCompletedFlow() {
+        ReservationFlow reservationFlow = pendingDateFlow();
 
         LocalDate checkIn = LocalDate.now();
         LocalDate checkOut = checkIn.plusDays(5);
@@ -97,6 +94,41 @@ public class ReservationControllerTest {
                 checkIn, checkOut, LocalTime.of(11, 0), false, true
         );
         reservationFlow.getReservation().setDates(reservationDates);
+        return reservationFlow;
+    }
+
+    /**
+     * Creates a {@code ReservationFlow} in the expected state after completing the guest form. This is the starting
+     * state for the Extras form. This will enable quickly rebuilding the current reservation flow state up to the
+     * current flow state under test. Note how the {@code ReservationFlow.activeStep} is not set since this will be tested.
+     * <ul>
+     * <li>Step 1 - ReservationDates = completed</li>
+     * <li>Step 2 - Guests = completed</li>
+     * </ul>
+     */
+    private ReservationFlow guestCompletedFlow() {
+        ReservationFlow reservationFlow = dateCompletedFlow();
+        reservationFlow.getReservation().addGuest(new Guest("john", "smith", false));
+        return reservationFlow;
+    }
+
+    /**
+     * Creates a {@code ReservationFlow} in the expected after entering in general extras details. This is the
+     * starting state for the Meal plans form. This will enable quickly rebuilding the current reservation flow state
+     * up to the current flow state under test. Note how the {@code ReservationFlow.activeStep} is not set since
+     * this will be tested.
+     *
+     * <ul>
+     * <li>Step 1 - ReservationDates = completed</li>
+     * <li>Step 2 - Guests = completed</li>
+     * <li>Step 3 - Extras = completed</li>
+     * </ul>
+     */
+    private ReservationFlow extrasCompletedFlow() {
+        ReservationFlow reservationFlow = guestCompletedFlow();
+        reservationFlow.getReservation().setGeneralExtras(
+                Set.of(new Extra("foxtel", BigDecimal.valueOf(4.5), Extra.Type.Premium, Extra.Category.General))
+        );
         return reservationFlow;
     }
 
@@ -110,10 +142,29 @@ public class ReservationControllerTest {
 
     // Flow step 1 - GET date form
 
+    @Test
+    public void getDateForm_MissingRoomIdQueryParam_400BadRequest() throws Exception {
+        mockMvc.perform(get("/reservation"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void getDateForm_IllegalRoomIdType_400BadRequest() throws Exception {
+        mockMvc.perform(get("/reservation?roomId=abc"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void getDateForm_RoomIdDoesNotExist_404NotFound() throws Exception {
+        when(roomRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/reservation?roomId=34"))
+                .andExpect(status().isNotFound());
+    }
+
     /**
-     * When we request the date form and the requested roomId exists its returned, we are asserting that the room is
-     * found and the {@code ReservationFlow} is in the expected state of displaying the Dates form as active but not
-     * yet completed.
+     * Given the room is found, its expected the Dates step is active but still incomplete which
+     * should be set by default when {@code ReservationFlow} is instantiated.
      */
     @Test
     public void getDateForm_RetrievesRoomById() throws Exception {
@@ -138,30 +189,13 @@ public class ReservationControllerTest {
                 .andExpect(view().name("reservation/dates"));
     }
 
-    @Test
-    public void getDateForm_MissingRoomIdQueryParam_400BadRequest() throws Exception {
-        mockMvc.perform(get("/reservation"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    public void getDateForm_IllegalRoomIdType_400BadRequest() throws Exception {
-        mockMvc.perform(get("/reservation?roomId=abc"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    public void getDateForm_RoomIdDoesNotExist_404NotFound() throws Exception {
-        when(roomRepository.findById(anyLong())).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/reservation?roomId=34"))
-                .andExpect(status().isNotFound());
-    }
-
     /**
      * Assert that the {@code ReservationFlow} is in the model with the correct state.
      *
-     * <p>The room must be set since the {@code Reservation} performs many calculations which depend on a {@code Room}.
+     * <ul>
+     * <li>The room must be set since the {@code Reservation} performs many calculations which depend on a {@code Room}.</li>
+     * <li>dates must not null given the date form will be bound to this object.</li>
+     * </ul>
      */
     @Test
     public void getDateForm_HasValidModel() throws Exception {
@@ -169,13 +203,19 @@ public class ReservationControllerTest {
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(room));
 
         mockMvc.perform(get("/reservation?roomId=5"))
+                .andExpect(model().attributeExists("reservationFlow"))
                 .andExpect(model().attribute("reservationFlow",
-                        Matchers.hasProperty("reservation",
-                                Matchers.hasProperty("room", Matchers.is(room)))));
+                        Matchers.hasProperty("reservation", Matchers.allOf(
+                                Matchers.hasProperty("room", Matchers.is(room)),
+                                Matchers.hasProperty("dates", Matchers.notNullValue())
+                        ))));
     }
 
     // Flow step 1 - POST date form
 
+    /**
+     * SessionStatus should be set to complete but not sure how to test this.
+     */
     @Test
     public void postDateForm_Cancel_RedirectHome() throws Exception {
         mockMvc.perform(post("/reservation/dates")
@@ -185,7 +225,12 @@ public class ReservationControllerTest {
 
     @Test
     public void postDateForm_EmptyForm_ExpectedBeanValidationErrors() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = pendingDateFlow();
+        // Setting to non date step to ensure date end points update to correct step since date is the default step
+        // which can be misleading.
+        reservationFlow.setActive(ReservationFlow.Step.Extras);
+        reservationFlow.completeStep(ReservationFlow.Step.Dates);
+
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
 
         mockMvc.perform(post("/reservation/dates")
@@ -198,12 +243,18 @@ public class ReservationControllerTest {
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates.estimatedCheckInTime", "NotNull"))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates.policyAcknowledged", "AssertTrue"))
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postDateForm_GlobalValidation_CheckIn_NotInPast() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = pendingDateFlow();
+        // Setting to non date step to ensure date end points update to correct step since date is the default step
+        // which can be misleading.
+        reservationFlow.setActive(ReservationFlow.Step.Extras);
+        reservationFlow.completeStep(ReservationFlow.Step.Dates);
+
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
@@ -214,12 +265,18 @@ public class ReservationControllerTest {
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates", "checkInDate.future"))
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postDateForm_GlobalValidation_Checkout_OccursAfterCheckIn() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = pendingDateFlow();
+        // Setting to non date step to ensure date end points update to correct step since date is the default step
+        // which can be misleading.
+        reservationFlow.setActive(ReservationFlow.Step.Extras);
+        reservationFlow.completeStep(ReservationFlow.Step.Dates);
+
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
@@ -230,12 +287,18 @@ public class ReservationControllerTest {
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates", "checkOutDate.afterCheckIn"))
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postDateForm_GlobalValidation_SatisfiesMinimumNightStay() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = pendingDateFlow();
+        // Setting to non date step to ensure date end points update to correct step since date is the default step
+        // which can be misleading.
+        reservationFlow.setActive(ReservationFlow.Step.Extras);
+        reservationFlow.completeStep(ReservationFlow.Step.Dates);
+
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
@@ -246,12 +309,23 @@ public class ReservationControllerTest {
                 .andExpect(model().errorCount(1))
                 .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.dates", "checkOutDate.minNights"))
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Dates))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Dates))
+                .andExpect(model().attributeExists("reservationFlow"));
+        ;
     }
 
+    /**
+     * Note the flash attributes are being used since we are redirecting. flash is used otherwise Model attributes
+     * wont survive the redirect. ReservationFlow.Step.Dates should now be completed.
+     */
     @Test
     public void postDateForm_Valid_RedirectToNextView() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = pendingDateFlow();
+        // Setting to non date step to ensure date end points update to correct step since date is the default step
+        // which can be misleading.
+        reservationFlow.setActive(ReservationFlow.Step.Extras);
+        reservationFlow.completeStep(ReservationFlow.Step.Dates);
+
         when(roomRepository.findById(anyLong())).thenReturn(Optional.of(reservationFlow.getReservation().getRoom()));
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
@@ -268,7 +342,7 @@ public class ReservationControllerTest {
 
     @Test
     public void roomCostFragment_ReturnsCorrectFragment() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = pendingDateFlow();
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
 
         mockMvc.perform(post("/reservation/dates?prices")
@@ -279,34 +353,42 @@ public class ReservationControllerTest {
 
     // Flow step 2 - guests
 
+    /**
+     * Specifically looking for a new {@code Guest} to bind to the form and the Guest step is active but incomplete.
+     */
     @Test
     public void getGuestForm_HasValidStartingState() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         mockMvc.perform(get("/reservation/guests")
                 .sessionAttr("reservationFlow", reservationFlow))
                 .andExpect(view().name("reservation/guests"))
                 .andExpect(model().attribute("guest", Matchers.is(new Guest())))
+                .andExpect(model().attributeExists("reservationFlow"))
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
     }
 
+    /**
+     * Going back to the date view requires a redirect which means the Model should be in flash otherwise it wont
+     * survive the redirect. The {@code ReservationFlow} step doesn't need checking as it will be updated when
+     * GET date form is called.
+     */
     @Test
-    public void postGuestForm_GoBackToDateView_ReturnsCorrectViewAndFlowStep() throws Exception {
-        ReservationFlow reservationFlow = toDateFlow();
+    public void postGuestFormGoBack_GoBackToDateView_RedirectsCorrectView() throws Exception {
+        ReservationFlow reservationFlow = dateCompletedFlow();
+        Long roomId = reservationFlow.getReservation().getRoom().getId();
 
         mockMvc.perform(post("/reservation/guests")
                 .param("back", "")
                 .sessionAttr("reservationFlow", reservationFlow))
-                .andExpect(view().name("redirect:/reservation/dates"))
-                .andExpect(flash().attributeExists("reservationFlow"))
-                .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Dates))
-                .andExpect(flashHasIncompleteFlowStep(ReservationFlow.Step.Dates));
+                .andExpect(view().name("redirect:/reservation?roomId=" + roomId))
+                .andExpect(flash().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postAddGuest_BeanValidationError_NullFields() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         ResultMatcher didNotAddGuest = model().attribute("reservationFlow",
                 Matchers.hasProperty("reservation",
@@ -328,12 +410,13 @@ public class ReservationControllerTest {
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(didNotAddGuest)
-                .andExpect(didNotCreateNewGuestObject);
+                .andExpect(didNotCreateNewGuestObject)
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postAddGuest_BeanValidationError_EmptyFields() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         ResultMatcher didNotAddGuest = model().attribute("reservationFlow",
                 Matchers.hasProperty("reservation",
@@ -360,12 +443,13 @@ public class ReservationControllerTest {
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(didNotAddGuest)
-                .andExpect(didNotCreateNewGuestObject);
+                .andExpect(didNotCreateNewGuestObject)
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postAddGuest_GuestExists_HasGlobalError() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         // case should be irrelevant in detecting duplicates
         reservationFlow.getReservation().addGuest(new Guest("JoHn", "sMITh", false));
@@ -394,12 +478,13 @@ public class ReservationControllerTest {
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(didNotAddGuest)
-                .andExpect(didNotCreateNewGuestObject);
+                .andExpect(didNotCreateNewGuestObject)
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     @Test
     public void postAddGuest_GuestLimitExceeded_HasGlobalError() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         // next guest added should be denied.
         reservationFlow.getReservation().getRoom().setBeds(1);
@@ -429,7 +514,8 @@ public class ReservationControllerTest {
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
                 .andExpect(didNotAddGuest)
-                .andExpect(didNotCreateNewGuestObject);
+                .andExpect(didNotCreateNewGuestObject)
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     /**
@@ -438,7 +524,7 @@ public class ReservationControllerTest {
      */
     @Test
     public void postAddGuest_Valid() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         reservationFlow.getReservation().getRoom().setBeds(1);
 
@@ -466,18 +552,20 @@ public class ReservationControllerTest {
                 .andExpect(didCreateNewGuestObject)
                 .andExpect(reservationContainsGuest)
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     /**
-     * The guests temp id not found should never happen as the button will always contain a guest that exists.
-     *
-     * Note that a new {@code Guest} must be in the model to bind to the guest form. Removing a guest is not dealing
-     * with adding a guest so we ensure a new guest is always returned to get a clean form each time.
+     * Technically will never happen since the remove button will always contain a guest that exists.
+     * <p>
+     * Each time a guest is removed, a new {@code Guest} must be in the model so the form is ready to receive
+     * a new {@code Guest}.
      */
     @Test
     public void postRemoveGuest_GuestIdNotFound_ShouldHaveNoEffect() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        // No guest is in here so the supplied guest id wont be found.
+        ReservationFlow reservationFlow = dateCompletedFlow();
 
         ResultMatcher reservationContainsGuest = model().attribute("reservationFlow",
                 Matchers.hasProperty("reservation",
@@ -491,7 +579,8 @@ public class ReservationControllerTest {
                 .andExpect(model().attribute("guest", Matchers.is(new Guest())))
                 .andExpect(reservationContainsGuest)
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
     /**
@@ -499,7 +588,7 @@ public class ReservationControllerTest {
      */
     @Test
     public void postRemoveGuest_GuestIdFound_ShouldBeRemoved() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
         reservationFlow.getReservation().getRoom().setBeds(2);
 
         Guest guestA = new Guest("john", "smith", false);
@@ -523,19 +612,20 @@ public class ReservationControllerTest {
                 .andExpect(model().attribute("guest", Matchers.is(new Guest())))
                 .andExpect(hasExpectedGuests)
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
-
     /**
-     * Transition from Guest form to Extras form and perform final guest checks.
+     * Try Transition from Guest form to Extras form and perform final guest checks. In this case there is a global
+     * error because no guests exist when there is a constraint saying at least 1 must exist.
      *
      * <p>Since the addGuest handler validates guest adding logic, this prevents most invalid states. Transitioning
-     * only requires checking if at least 1 guest exists.
+     * only requires checking if at least 1 guest exists.</p>
      */
     @Test
     public void postGuestToExtras_NoGuestExists_ExpectGlobalError() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
         reservationFlow.getReservation().clearGuests();
 
         mockMvc.perform(post("/reservation/guests")
@@ -544,12 +634,41 @@ public class ReservationControllerTest {
                 .andExpect(model().errorCount(1))
                 .andExpect(globalErrorMatchers().hasGlobalErrorCode("guest", "guests.noneExist"))
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
-                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests));
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(model().attributeExists("reservationFlow"));
     }
 
+
+    /**
+     * Try Transition from Guest form to Extras form and perform final guest checks. In this case there is a global
+     * error because there should be at least 1 adult.
+     *
+     * <p>Since the addGuest handler validates guest adding logic, this prevents most invalid states but
+     * the final global checks are done on the final post.</p>
+     */
+    @Test
+    public void postGuestToExtras_NoAdultExists_ExpectGlobalError() throws Exception {
+        ReservationFlow reservationFlow = dateCompletedFlow();
+        reservationFlow.getReservation().clearGuests();
+
+        mockMvc.perform(post("/reservation/guests")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("reservation/guests"))
+                .andExpect(model().errorCount(1))
+                .andExpect(globalErrorMatchers().hasGlobalErrorCode("guest", "guests.noneExist"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(model().attributeExists("reservationFlow"));
+    }
+
+    /**
+     * When all guest info is entered in correctly, redirect to the next flow step.
+     * <p>Note the flash attributes are being used since we are redirecting. If flash was not used then the Model
+     * attributes wouldn't survive the redirect. ReservationFlow.Step.Guests should now be completed.</p>
+     */
     @Test
     public void postGuestToExtras_Valid() throws Exception {
-        ReservationFlow reservationFlow = toGuestFlow();
+        ReservationFlow reservationFlow = dateCompletedFlow();
         reservationFlow.getReservation().getRoom().setBeds(3);
         reservationFlow.getReservation().addGuest(new Guest("john", "smith", false));
 
@@ -558,8 +677,71 @@ public class ReservationControllerTest {
                 .andExpect(view().name("redirect:/reservation/extras"))
                 .andExpect(model().hasNoErrors())
                 .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Guests))
-                .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Guests));
+                .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Guests))
+                .andExpect(flash().attributeExists("reservationFlow"));
     }
 
+    // Flow step 3 - extras
+
+    /**
+     */
+    @Test
+    public void getGeneralExtrasForm_HasValidStartingState() throws Exception {
+        ReservationFlow reservationFlow = guestCompletedFlow();
+
+        List<Extra> generalExtras = List.of(
+                new Extra("foxtel", BigDecimal.valueOf(3.94), Extra.Type.Premium, Extra.Category.General)
+        );
+        when(extraRepository.findAllByTypeAndCategory(any(Extra.Type.class), eq(Extra.Category.General)))
+                .thenReturn(generalExtras);
+
+        mockMvc.perform(get("/reservation/extras")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("reservation/extras"))
+                .andExpect(model().attribute("extras", Matchers.equalTo(generalExtras)))
+                .andExpect(model().attributeExists("reservationFlow"))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Extras))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Extras));
+
+        verify(extraRepository, times(1))
+                .findAllByTypeAndCategory(any(Extra.Type.class), eq(Extra.Category.General));
+        verifyNoMoreInteractions(extraRepository);
+    }
+
+    /**
+     * Going back requires the model be transferred into flash attributes otherwise it will be lost
+     * during the redirect.
+     */
+    @Test
+    public void goBackFromGeneralExtrasToGuests_RedirectsCorrectView() throws Exception {
+        ReservationFlow reservationFlow = guestCompletedFlow();
+
+        mockMvc.perform(post("/reservation/extras")
+                .param("back", "")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("redirect:/reservation/guests"))
+                .andExpect(flash().attributeExists("reservationFlow"));
+    }
+
+    /**
+     * When the selected general extras are submitted, check the flow step is completed for Extras and
+     * we redirect to the next meal view. flash attributes are needed so the Model state is not lost
+     * across the redirect.
+     *
+     * We cant test for checking extras are added to the reservation since all of that happens
+     * using spring binding infrastructure so would need to make an integration test for that using
+     * {@literal @SpringBootTest}.
+     */
+    @Test
+    public void submitGeneralExtras_HasCorrectViewAndStep() throws Exception {
+        ReservationFlow reservationFlow = guestCompletedFlow();
+
+        mockMvc.perform(post("/reservation/extras")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("redirect:/reservation/meals"))
+                .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Extras))
+                .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Extras))
+                .andExpect(flash().attributeExists("reservationFlow"));
+    }
 
 }

@@ -21,16 +21,12 @@ public class ExtrasService {
         this.extraRepository = extraRepository;
     }
 
-    public List<Extra> getExtras(RoomType roomType, Extra.Category category) {
-        switch (roomType) {
-            case Luxury:
-            case Business:
-                return extraRepository.findAllByTypeAndCategory(Extra.Type.Premium, category);
-            case Balcony:
-            case Economy:
-                return extraRepository.findAllByTypeAndCategory(Extra.Type.Basic, category);
-        }
-        return new ArrayList<>();
+    public List<Extra> getGeneralExtras(Extra.Type type) {
+        return extraRepository.findAllByTypeAndCategory(type, Extra.Category.General);
+    }
+
+    public List<Extra> getFoodExtras(Extra.Type type) {
+        return extraRepository.findAllByTypeAndCategory(type, Extra.Category.Food);
     }
 
     public List<Extra> getExtrasById(List<Long> ids) {

@@ -6,7 +6,7 @@ import com.demo.domain.location.Address;
 import com.demo.domain.location.Postcode;
 import com.demo.domain.location.State;
 import com.demo.persistance.HotelRepository;
-import com.demo.persistance.RoomPredicates;
+import com.demo.persistance.predicates.RoomPredicates;
 import com.demo.persistance.RoomRepository;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matchers;
@@ -22,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.demo.TestHelpers.mappedAssertion;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +30,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringRunner.class)
@@ -57,9 +59,35 @@ public class HotelSearchControllerTest {
         mockMvc.perform(get("/hotel/search"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("/hotel/hotels"))
-                .andExpect(model().attribute("results", hasExpectedPageResult));
+                .andExpect(model().attribute("hotels", hasExpectedPageResult));
 
-        verifyZeroInteractions(hotelRepository);
+        verify(hotelRepository, times(1))
+                .findAllByLocation(isNull(), isNull(), isNull(), any(Pageable.class));
+    }
+
+    /**
+     * When the query string contains a valid location but no hotels are found, the result should contain 0 hotels.
+     */
+    @Test
+    public void getHotels_NoHotelsFound_AddsResultsToModel() throws Exception {
+        List<Hotel> hotels = List.of();
+        PageImpl<Hotel> results = new PageImpl<>(hotels, PageRequest.of(0, 20), hotels.size());
+
+        when(hotelRepository.findAllByLocation(eq("WA"), isNull(), eq("4000"), any(Pageable.class)))
+                .thenReturn(results);
+
+        // sanity check to ensure the returned hotels from repository appears in the page content.
+        FeatureMatcher<Page<Hotel>, List<Hotel>> hasExpectedPageResult =
+                mappedAssertion(Slice::getContent, Matchers.is(hotels));
+
+        mockMvc.perform(get("/hotel/search?state=WA&postcode=4000"))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(view().name("/hotel/hotels"))
+                .andExpect(model().attribute("hotels", hasExpectedPageResult));
+
+        verify(hotelRepository, times(1))
+                .findAllByLocation(eq("WA"), isNull(), eq("4000"), any(Pageable.class));
     }
 
     /**
@@ -84,7 +112,7 @@ public class HotelSearchControllerTest {
         mockMvc.perform(get("/hotel/search?state=VIC"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("/hotel/hotels"))
-                .andExpect(model().attribute("results", hasExpectedPageResult));
+                .andExpect(model().attribute("hotels", hasExpectedPageResult));
 
         verify(hotelRepository, times(1))
                 .findAllByLocation(eq("VIC"), isNull(), isNull(), any(Pageable.class));
@@ -99,45 +127,42 @@ public class HotelSearchControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    /**
-     * When the hotel is not found by hotel id, there should be 0 page elements.
-     */
     @Test
-    public void getAvailableHotelRooms_HotelIdNotFound_HasZeroPageElements() throws Exception {
-        FeatureMatcher<Page<Hotel>, Long> hasExpectedPageResult =
-                mappedAssertion(Page::getTotalElements, Matchers.is(0L));
-
-        // We are simply mocking returning no page content simulating a negative search.
-        long hotelId = 3;
-        PageImpl<Room> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-        when(roomRepository.findAll(RoomPredicates.availableRoom(hotelId), PageRequest.of(0, 20)))
-                .thenReturn(page);
-
+    public void getAvailableHotelRooms_HotelIdNotFound_Throws404() throws Exception {
+        long hotelId = 4;
         mockMvc.perform(get(String.format("/hotel/%d/rooms", hotelId)))
-                .andExpect(status().isOk())
-                .andExpect(view().name("/hotel/rooms"))
-                .andExpect(model().attribute("rooms", hasExpectedPageResult));
-
-        verify(roomRepository, times(1))
-                .findAll(eq(RoomPredicates.availableRoom(hotelId)), any(Pageable.class));
+                .andExpect(status().isNotFound());
     }
 
+    /**
+     * Note: The model must contain the hotel so the UI can display detailed information.
+     */
     @Test
     public void getAvailableHotelRooms_HotelHasAvailableRooms() throws Exception {
         FeatureMatcher<Page<Hotel>, Long> hasExpectedPageResult =
                 mappedAssertion(Page::getTotalElements, Matchers.is(1L));
 
-        long hotelId = 3;
-        // Rather than recreate a new hotel room, setting total elements to 1 will achieve the same thing.
-        PageImpl<Room> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 1);
-        when(roomRepository.findAll(RoomPredicates.availableRoom(hotelId), PageRequest.of(0, 20))).thenReturn(page);
+        // Dummy hotel to return in the mock.
+        Address address = new Address("Xavier Hotel", "100 smith road", "",
+                State.QLD, "Brisbane", new Postcode("4000"));
+        Hotel hotel = new Hotel("Xavier Hotel", address, 4, "xavier@hotel.com");
+        hotel.setId(3L);
 
-        mockMvc.perform(get(String.format("/hotel/%d/rooms", hotelId)))
+        // Rather than recreate a new hotel room, setting total elements to 1 will achieve the same thing for testing.
+        PageImpl<Room> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 1);
+        when(roomRepository.findAll(RoomPredicates.availableRoom(hotel.getId()), PageRequest.of(0, 20))).thenReturn(page);
+
+        when(hotelRepository.findById(hotel.getId())).thenReturn(Optional.of(hotel));
+
+        mockMvc.perform(get(String.format("/hotel/%d/rooms", hotel.getId())))
                 .andExpect(status().isOk())
                 .andExpect(view().name("/hotel/rooms"))
+                .andExpect(model().attribute("hotel", Matchers.isA(Hotel.class)))
                 .andExpect(model().attribute("rooms", hasExpectedPageResult));
 
         verify(roomRepository, times(1))
-                .findAll(eq(RoomPredicates.availableRoom(hotelId)), any(Pageable.class));
+                .findAll(eq(RoomPredicates.availableRoom(hotel.getId())), any(Pageable.class));
+
+        verify(hotelRepository, times(1)).findById(eq(hotel.getId()));
     }
 }

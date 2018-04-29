@@ -101,6 +101,11 @@ public class ReservationFlow {
         return completedSteps.contains(step);
     }
 
+    public void enterStep(Step step) {
+        setActive(step);
+        incompleteStep(step);
+    }
+
     public List<StepDescription> getStepDescriptions() {
         return stepDescriptions;
     }

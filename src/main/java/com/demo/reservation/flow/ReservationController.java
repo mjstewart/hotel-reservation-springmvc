@@ -1,12 +1,16 @@
 package com.demo.reservation.flow;
 
 import com.demo.TimeProvider;
+import com.demo.domain.Extra;
 import com.demo.domain.Guest;
 import com.demo.domain.ReservationDates;
 import com.demo.domain.Room;
 import com.demo.exceptions.NotFoundException;
 import com.demo.persistance.RoomRepository;
+import com.demo.reservation.ExtraRepository;
 import com.demo.reservation.flow.forms.ReservationFlow;
+import com.demo.reservation.testcheckboxes.Drink;
+import com.demo.reservation.testcheckboxes.Person;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -15,19 +19,23 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Controller
 @SessionAttributes("reservationFlow")
 public class ReservationController {
 
     private RoomRepository roomRepository;
+    private ExtraRepository extraRepository;
     private TimeProvider timeProvider;
 
-    public ReservationController(RoomRepository roomRepository, TimeProvider timeProvider) {
+    public ReservationController(RoomRepository roomRepository,
+                                 ExtraRepository extraRepository,
+                                 TimeProvider timeProvider) {
         this.roomRepository = roomRepository;
+        this.extraRepository = extraRepository;
         this.timeProvider = timeProvider;
     }
 
@@ -53,6 +61,7 @@ public class ReservationController {
     public String getDateForm(@RequestParam(value = "roomId") Long roomId,
                               @ModelAttribute("reservationFlow") ReservationFlow reservationFlow)
             throws NotFoundException {
+        reservationFlow.enterStep(ReservationFlow.Step.Dates);
 
         Optional<Room> maybeRoom = roomRepository.findById(roomId);
         if (!maybeRoom.isPresent()) {
@@ -64,22 +73,18 @@ public class ReservationController {
         return "reservation/dates";
     }
 
-    @GetMapping("/reservation/dates")
-    public String dates(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow) {
-        return "reservation/dates";
-    }
-
     /**
      * BindingResult must be directly after the @Valid object.
      * https://stackoverflow.com/questions/30297719/cannot-get-validation-working-with-spring-boot-and-thymeleaf/30298348
-     *
-     * @Valid @ModelAttribute DateForm dateForm - means the post request contains the form body which will spring will create
+     * <p>
+     * {@literal @Valid} @ModelAttribute DateForm dateForm - means the post request contains the form body which will spring will create
      * into a domain object for us and validate it using the JPA annotations.
      */
     @PostMapping("/reservation/dates")
     public String dates(@Valid @ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
                         BindingResult bindingResult,
                         RedirectAttributes redirectAttributes) {
+        reservationFlow.enterStep(ReservationFlow.Step.Dates);
 
         if (bindingResult.hasErrors()) {
             return "reservation/dates";
@@ -118,7 +123,7 @@ public class ReservationController {
 
     @GetMapping("/reservation/guests")
     public String getGuestForm(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow, Model model) {
-        reservationFlow.setActive(ReservationFlow.Step.Guests);
+        reservationFlow.enterStep(ReservationFlow.Step.Guests);
         model.addAttribute("guest", new Guest());
         return "reservation/guests";
     }
@@ -126,9 +131,8 @@ public class ReservationController {
     @PostMapping(value = "/reservation/guests", params = "back")
     public String postGuestFormGoBack(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
                                       RedirectAttributes redirectAttributes) {
-        reservationFlow.incompleteStep(ReservationFlow.Step.Guests);
         redirectAttributes.addFlashAttribute("reservationFlow", reservationFlow);
-        return "redirect:/reservation/dates";
+        return "redirect:/reservation?roomId=" + reservationFlow.getReservation().getRoom().getId();
     }
 
     @PostMapping(value = "/reservation/guests", params = "addGuest")
@@ -136,6 +140,7 @@ public class ReservationController {
                                BindingResult bindingResult,
                                @ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
                                Model model) {
+        reservationFlow.enterStep(ReservationFlow.Step.Guests);
 
         if (bindingResult.hasErrors()) {
             return "reservation/guests";
@@ -163,6 +168,7 @@ public class ReservationController {
     public String postRemoveGuest(@RequestParam("removeGuest") UUID guestId,
                                   @ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
                                   Model model) {
+        reservationFlow.enterStep(ReservationFlow.Step.Guests);
         reservationFlow.getReservation().removeGuestById(guestId);
         model.addAttribute("guest", new Guest());
         return "reservation/guests";
@@ -177,9 +183,14 @@ public class ReservationController {
                                     Errors errors,
                                     @ModelAttribute ReservationFlow reservationFlow,
                                     RedirectAttributes redirectAttributes) {
+        reservationFlow.enterStep(ReservationFlow.Step.Guests);
 
-        if (reservationFlow.getReservation().getGuests().isEmpty()) {
+        if (!reservationFlow.getReservation().hasGuests()) {
             errors.reject("guests.noneExist", "There must be at least 1 guest");
+            return "reservation/guests";
+        }
+        if (!reservationFlow.getReservation().hasAtLeastOneAdultGuest()) {
+            errors.reject("guests.noAdults", "There must be at least 1 adult");
             return "reservation/guests";
         }
 
@@ -193,9 +204,77 @@ public class ReservationController {
     // Flow step 3
 
     @GetMapping("/reservation/extras")
-    public String getExtrasForm(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow, Model model) {
+    public String getGeneralExtrasForm(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow, Model model) {
         reservationFlow.setActive(ReservationFlow.Step.Extras);
-//        model.addAttribute("guest", new Guest());
+
+        List<Extra> generalExtras = extraRepository.findAllByTypeAndCategory(
+                reservationFlow.getReservation().getExtraPricingType(), Extra.Category.General
+        );
+        model.addAttribute("extras", generalExtras);
         return "reservation/extras";
+    }
+
+    @PostMapping(value = "/reservation/extras", params = "back")
+    public String goBackFromGeneralExtrasToGuests(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                                  RedirectAttributes ra) {
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        return "redirect:/reservation/guests";
+    }
+
+    @PostMapping(value = "/reservation/extras")
+    public String submitGeneralExtras(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                      RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Extras);
+
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        reservationFlow.completeStep(ReservationFlow.Step.Extras);
+        return "redirect:/reservation/meals";
+    }
+
+    @PostMapping(value = "/reservation/extras", params = "add")
+    public String submitGeneralExtrasAjax(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow) {
+        System.out.println("submitGeneralExtrasAjax");
+        System.out.println(reservationFlow.getReservation().getGeneralExtras());
+        return "reservation/fragments :: quickSummary";
+    }
+
+
+    // Flow step 4 - meals
+
+    @GetMapping("/reservation/meals")
+    public String getMeals() {
+        return "reservation/meals";
+    }
+
+
+
+
+
+
+
+
+
+    @GetMapping("/drinks")
+    public String getDrinks(Model model) {
+        Person person = new Person(30L);
+        List<Drink> selectableDrinks = Arrays.asList(
+                new Drink(1L, "coke"),
+                new Drink(2L, "fanta"),
+                new Drink(3L, "sprite")
+        );
+
+        model.addAttribute("person", person);
+        model.addAttribute("selectableDrinks", selectableDrinks);
+
+        return "reservation/drinks";
+    }
+
+
+
+    @PostMapping("/drinks")
+    public String postDrinks(@ModelAttribute("person") Person person) {
+        System.out.println("Person has been posted!");
+        System.out.println(person);
+        return "reservation/drinks";
     }
 }

@@ -1,4 +1,4 @@
-package com.demo.persistance;
+package com.demo.persistance.predicates;
 
 import com.demo.domain.QRoom;
 import com.querydsl.core.types.Predicate;

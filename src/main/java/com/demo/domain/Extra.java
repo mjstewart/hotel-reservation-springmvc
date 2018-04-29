@@ -55,6 +55,10 @@ public class Extra {
     public Extra() {
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getId() {
         return id;
     }
@@ -110,8 +114,14 @@ public class Extra {
         return Objects.hash(description, type, category);
     }
 
-    public static Comparator<Extra> comparator() {
-        return Comparator.comparing(Extra::getPerNightPrice, BigDecimal::compareTo)
-                .thenComparing(Extra::getDescription);
+    @Override
+    public String toString() {
+        return "Extra{" +
+                "id=" + id +
+                ", description='" + description + '\'' +
+                ", perNightPrice=" + perNightPrice +
+                ", type=" + type +
+                ", category=" + category +
+                '}';
     }
 }

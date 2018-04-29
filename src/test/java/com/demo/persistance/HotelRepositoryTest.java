@@ -1,10 +1,10 @@
 package com.demo.persistance;
 
 import com.demo.domain.Hotel;
-import com.demo.domain.Room;
 import com.demo.domain.location.Address;
 import com.demo.domain.location.Postcode;
 import com.demo.domain.location.State;
+import com.demo.persistance.predicates.HotelPredicates;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -6,34 +6,14 @@
 
 <div layout:fragment="main">
     <div>
-        <div class="main__content-group">
-            <h3 class="ui dividing header">Room details</h3>
-            <table class="reservation-summary-table">
-                <tbody>
-                <tr>
-                    <td class="bold">Room number</td>
-                    <td th:text="${reservationFlow.reservation.room.roomNumber}"></td>
-                </tr>
-                <tr>
-                    <td class="bold">Room type</td>
-                    <td th:text="${reservationFlow.reservation.room.roomType}"></td>
-                </tr>
-                <tr>
-                    <td class="bold"># Beds</td>
-                    <td th:text="${reservationFlow.reservation.room.beds}"></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-
-        <form id="form" class="main__content-group" th:action="@{/reservation/guests}" method="post"
-              th:object="${guest}">
-            <h3 class="ui dividing header"
-                th:text="${reservationFlow.getActiveStepDescription().getDescription()}"></h3>
+        <form id="form" class="main__content-group" th:action="@{/reservation/guests}" method="post" th:object="${guest}">
 
             <div class="ui form">
-                <div class="field required form-group">
+                <div class="ui top attached segment">
+                    <div class="ui top attached label"
+                         th:text="${reservationFlow.getActiveStepDescription().getDescription()}">
+                    </div>
+
                     <div class="two fields"
                          th:with="hasError=${#fields.hasErrors('firstName')}" th:classappend="${hasError} ? 'error'">
                         <div class="field">
@@ -55,44 +35,55 @@
                             <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{child}"></div>
                         </div>
                     </div>
+
+                    <div class="field"
+                         th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
+
+                    <div class="field">
+                        <button class="ui button" type="submit" name="back">Back</button>
+                        <button class="ui button" type="submit" name="addGuest">Add Guest</button>
+                        <button class="ui button" type="submit">Next</button>
+                    </div>
                 </div>
 
-                <div class="field"
-                     th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
-
-                <div class="field">
-                    <button class="ui button" type="submit" name="back">Back</button>
-                    <button class="ui button" type="submit" name="addGuest">Add Guest</button>
-                    <button class="ui button" type="submit">Next</button>
-                </div>
             </div>
         </form>
 
-
         <div class="main__content-group">
-            <h3 class="ui dividing header"
-                th:text="|Guests (${reservationFlow.reservation.guests.size()}/${reservationFlow.reservation.room.beds})|"></h3>
-            <span th:if="${reservationFlow.reservation.isRoomFull()}"><i class="icon-large green check icon"></i>Room is now full</span>
-            <table class="ui celled table" th:unless="${reservationFlow.reservation.guests.isEmpty()}">
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Child</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="guest : ${reservationFlow.reservation.guests}">
-                    <td th:text="${guest.getFormattedFullName()}"></td>
-                    <td><i th:if="${guest.child}" class="icon-large green check icon"></i></td>
-                    <td>
-                        <form id="deleteGuestForm" th:action="@{/reservation/guests}" method="post">
-                            <button class="ui button" type="submit" name="removeGuest" th:value="${guest.tempId}">Remove</button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="ui top attached segment">
+                <div class="ui top attached label"
+                     th:text="|Guests (${reservationFlow.reservation.guests.size()}/${reservationFlow.reservation.room.beds})|">
+                </div>
+
+                <p th:if="${reservationFlow.reservation.guests.isEmpty()}">
+                    This reservation currently has no guests.
+                </p>
+
+                <div class="ui info message" th:if="${reservationFlow.reservation.isRoomFull()}">
+                    Room is now full
+                </div>
+
+                <table class="ui celled table" th:unless="${reservationFlow.reservation.guests.isEmpty()}">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Child</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="guest : ${reservationFlow.reservation.guests}">
+                        <td th:text="${guest.getFormattedFullName()}"></td>
+                        <td><i th:if="${guest.child}" class="icon-large green check icon"></i></td>
+                        <td>
+                            <form id="deleteGuestForm" th:action="@{/reservation/guests}" method="post">
+                                <button class="ui button" type="submit" name="removeGuest" th:value="${guest.tempId}">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -124,7 +115,6 @@
             } else {
                 controls.find("label").addClass("dim");
             }
-
         }
     </script>
 </th:block>

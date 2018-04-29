@@ -4,7 +4,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}"
       xmlns:qs="http://www.w3.org/1999/xhtml">
 <body>
-<div layout:fragment="content" th:with="totalResults=${results.getTotalElements()}">
+<div layout:fragment="content">
 
     <div class="ui breadcrumb">
         <a class="section" th:href="@{/}">Search</a>
@@ -12,12 +12,12 @@
         <div class="active section">Hotels</div>
     </div>
 
-    <div class="ui info message" th:if="${totalResults == 0}">
+    <div class="ui info message" th:if="${hotels.getTotalElements() == 0}">
         0 hotels found - <a th:href="@{/}">Search again</a>
     </div>
 
-    <div th:unless="${totalResults == 0}">
-        <h3 class="ui dividing header margin-top-20" th:text="|Results (${totalResults})|"></h3>
+    <div th:unless="${hotels.getTotalElements() == 0}">
+        <h3 class="ui dividing header margin-top-20" th:text="|Results (${hotels.getTotalElements()})|"></h3>
         <table class="ui sortable celled table"
                th:with="qstring=${#request.getQueryString()},
                  urlBuilder=${#qs.urlBuilder(#request.getRequestURI())},
@@ -81,7 +81,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="hotel,stat : ${results.getContent()}">
+            <tr th:each="hotel,stat : ${hotels.getContent()}">
                 <td>
                     <a th:href="@{/hotel(id=${hotel.id})}" th:text="${hotel.name}"></a>
                 </td>
@@ -94,29 +94,29 @@
                 <td th:text="${hotel.address.state}"></td>
                 <td th:text="${hotel.address.postcode.value}"></td>
                 <td>
-                    <a th:href="@{/hotel/{id}/rooms}">Rooms</a>
+                    <a th:href="@{/hotel/{id}/rooms(id=${hotel.id},sort='costPerNight,desc')}">Rooms</a>
                 </td>
             </tr>
             </tbody>
 
-            <tfoot th:with="lastPage=${results.getTotalPages() - 1},
-                            pageNumber=${results.getPageable().getPageNumber()},
+            <tfoot th:with="lastPage=${hotels.getTotalPages() - 1},
+                            pageNumber=${hotels.getPageable().getPageNumber()},
                             isOnLastPage=${pageNumber == lastPage}">
 
             <tr>
                 <th colspan="6">
-                    <span class="margin-right-10" th:text="|${pageNumber + 1} of ${results.getTotalPages()}|"></span>
+                    <span class="margin-right-10" th:text="|${pageNumber + 1} of ${hotels.getTotalPages()}|"></span>
 
                     <div class="ui pagination menu">
                         <a class="icon item"
-                           th:if="${results.getPageable().hasPrevious()}"
+                           th:if="${hotels.getPageable().hasPrevious()}"
                            th:with="newQueryString=${#qs.resetPageNumber(qstring)}"
                            th:href="${urlBuilder.apply(newQueryString)}"
                            th:title="|Go to first page - (page ${#qs.getPageNumber(newQueryString)})|">
                             <i class="angle double left icon"></i>
                         </a>
                         <a class="icon item"
-                           th:if="${results.getPageable().hasPrevious()}"
+                           th:if="${hotels.getPageable().hasPrevious()}"
                            th:with="newQueryString=${#qs.decrementPage(qstring)}"
                            th:href="${urlBuilder.apply(newQueryString)}"
                            th:title="|Previous page - (page ${#qs.getPageNumber(newQueryString)})|">
