@@ -6,7 +6,75 @@
 
 <div layout:fragment="main">
 
-    <h1>meals</h1>
+    <form id="form" class="main__content-group" th:action="@{/reservation/meals}" method="post"
+          th:object="${reservationFlow.reservation}">
+
+        <h3 class="ui dividing header" th:text="${reservationFlow.getActiveStepDescription().getDescription()}"></h3>
+
+        <div>
+            <p th:with="childDiscount=${#numbers.formatPercent(T(com.demo.domain.MealPlan).CHILD_DISCOUNT_PERCENT, 1, 2)}"
+               th:text="|We offer buffet style all you can eat meals for breakfast, lunch and dinner delivered through our
+               pre paid meal plans. For example, if you are staying 3 nights, the total breakfast cost includes
+               all 3 nights with children receiving ${childDiscount} off each meal.
+               All you can drink tea/coffee and soft drinks are included in the buffet plans.|">
+            </p>
+
+            <p>It's fine if you don't wish to purchase meal plans, our restaurant and room service is available
+                to order individual meals or drink up to 10 pm each day. Even if you don't wish to purchase a meal plan,
+                let us know if any guests have dietary requirements and we will be sure to have plenty of options
+                available.
+            </p>
+
+            <p class="bold">Note: Alcohol is sold separately</p>
+        </div>
+
+        <div class="ui form margin-top-20">
+            <div class="field" th:each="plan,mealPlanStat : *{mealPlans}">
+                <div class="ui top attached segment">
+                    <div class="ui top attached label"
+                         th:text="${plan.guest.child} ? (|${plan.guest.getFormattedFullName()} (Child)|) : ${plan.guest.getFormattedFullName()}">
+                    </div>
+
+                    <div>
+                        <h5>Meals</h5>
+                        <div class="ui checkbox margin-right-10" th:each="foodExtra : ${foodExtras}"
+                             th:with="sequenceId=|reservation.mealPlans${mealPlanStat.index}.foodExtras|">
+                            <input class="foodExtraCheckbox" type="checkbox" th:field="*{mealPlans[__${mealPlanStat.index}__].foodExtras}"
+                                   th:value="${foodExtra.id}">
+                            <label th:for="${#ids.prev(sequenceId)}"
+                                   th:with="cost=${#numbers.formatCurrency(plan.calculateExtraCost(foodExtra))}"
+                                   th:text="|${foodExtra.description} - ${cost}|"></label>
+                        </div>
+
+                    </div>
+
+                    <div class="margin-top-20"
+                         th:with="sequenceId=|reservation.mealPlans${mealPlanStat.index}.dietaryRequirements|,
+                         validationFieldPath=|mealPlans[${mealPlanStat.index}].dietaryRequirements|">
+                        <h5>Dietary Requirements</h5>
+                        <div class="ui checkbox margin-right-10" th:each="diet : ${dietaryRequirements}">
+                            <input type="checkbox" th:field="*{mealPlans[__${mealPlanStat.index}__].dietaryRequirements}"
+                                   th:value="${diet}">
+                            <label th:for="${#ids.prev(sequenceId)}" th:text="${diet.description}"></label>
+                        </div>
+
+                        <div class="ui negative message" th:if="${#fields.hasErrors(validationFieldPath)}">
+                            <div class="header">
+                                Invalid dietary requirement
+                            </div>
+                            <p th:each="err : ${#fields.errors(validationFieldPath)}" th:text="${err}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="field">
+                <button class="ui button" type="submit" name="back">Back</button>
+                <button class="ui button" type="submit">Next</button>
+            </div>
+        </div>
+    </form>
 </div>
 
 
@@ -15,7 +83,24 @@
 
         $(document).ready(function () {
             registerOnSubmitHandler("form");
+            $(".foodExtraCheckbox").click(updateQuickSummary)
         });
+
+        function updateQuickSummary() {
+            const url = '/reservation/meals?add';
+            const data = $("#form").serialize();
+
+            enhancedAjaxHandler('Updating costs', function(onSuccess) {
+                $.post(url, data, function (newQuickSummary) {
+                    onSuccess();
+                    $("#quickSummary").replaceWith(newQuickSummary);
+                }).fail(function () {
+                    showErrorModal('Unable to update meal plan prices due to server error');
+                });
+            });
+        }
+
+
 
     </script>
 </th:block>

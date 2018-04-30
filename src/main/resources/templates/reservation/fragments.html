@@ -134,7 +134,7 @@
                 <td class="bold">Extras</td>
                 <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalGeneralExtrasCost())}"></td>
             </tr>
-            <tr th:unless="${reservationFlow.reservation.mealPlans.isEmpty()}">
+            <tr th:unless="${reservationFlow.reservation.hasEmptyMealPlans()}">
                 <td class="bold">Meals</td>
                 <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalMealPlansCost())}"></td>
             </tr>

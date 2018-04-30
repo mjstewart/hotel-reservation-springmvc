@@ -12,10 +12,13 @@ import java.util.UUID;
 
 @Entity
 public class MealPlan implements Serializable {
+    public static final double CHILD_DISCOUNT_PERCENT = 0.60;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    // Simplifies equal/hashCode
     private UUID mealPlanId = UUID.randomUUID();
 
     @OneToOne
@@ -95,16 +98,37 @@ public class MealPlan implements Serializable {
     }
 
     /**
-     * @return The sum result of multiplying each food extra by total nights while applying
-     * any child discounts to the total sum.
+     * @return {@code true} if {@code DietaryRequirement.Vegan} and {@code DietaryRequirement.Vegetarian} exist at the
+     * same time.
+     */
+    public boolean hasInvalidDietaryRequirements() {
+        return dietaryRequirements.stream()
+                .filter(diet -> diet == DietaryRequirement.Vegan || diet == DietaryRequirement.Vegetarian)
+                .count() == 2;
+    }
+
+    /**
+     * @return The sum of calculating the total extra cost including total nights and child discounts for each extra.
      */
     public BigDecimal getTotalMealPlanCost() {
-        BigDecimal total = foodExtras.stream()
-                .map(extra -> extra.getTotalPrice(reservation.getDates().totalNights()))
+        return foodExtras.stream()
+                .map(this::calculateExtraCost)
                 .reduce(BigDecimal.ZERO, BigDecimal::add, BigDecimal::add);
+    }
 
+    /**
+     * @param foodExtra The food extra
+     * @return The food extra cost multiplied by total nights with child discounts applied if applicable.
+     * @throws IllegalArgumentException if Extra is not {@code Extra.Category.Food}
+     */
+    public BigDecimal calculateExtraCost(Extra foodExtra) throws IllegalArgumentException {
+        if (foodExtra.getCategory() != Extra.Category.Food) {
+            throw new IllegalArgumentException("Extra is not of type Extra.Category.Food");
+        }
+
+        BigDecimal total = foodExtra.getTotalPrice(reservation.getDates().totalNights());
         if (guest.isChild()) {
-            BigDecimal discount = total.multiply(BigDecimal.valueOf(Reservation.CHILD_DISCOUNT_PERCENT));
+            BigDecimal discount = total.multiply(BigDecimal.valueOf(CHILD_DISCOUNT_PERCENT));
             return total.subtract(discount);
         }
         return total;

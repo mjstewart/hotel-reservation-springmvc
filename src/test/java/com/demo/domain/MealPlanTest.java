@@ -160,7 +160,7 @@ public class MealPlanTest {
     }
 
     /**
-     * The child discount gets applied after the food extras total has been calculated.
+     * The child discount gets applied to each food extra then added together.
      */
     @Test
     public void getTotalMealPlanCost_ChildDiscountApplied() {
@@ -171,25 +171,138 @@ public class MealPlanTest {
         reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
         reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
 
+        // Adult prices form the base price, if guest is a child then discount is applied.
         BigDecimal breakfastPerNight = new BigDecimal("2.00");
         BigDecimal lunchPerNight = new BigDecimal("4.12");
         BigDecimal dinnerPerNight = new BigDecimal("5.63");
-
         List<Extra> foodExtras = List.of(
                 new Extra("Breakfast", breakfastPerNight, Extra.Type.Basic, Extra.Category.Food),
                 new Extra("Lunch", lunchPerNight, Extra.Type.Basic, Extra.Category.Food),
                 new Extra("Dinner", dinnerPerNight, Extra.Type.Basic, Extra.Category.Food)
         );
 
+        // apply discount to breakfast for the total night duration
+        BigDecimal breakFastDiscount = breakfastPerNight.multiply(totalNights)
+                .multiply(BigDecimal.valueOf(MealPlan.CHILD_DISCOUNT_PERCENT));
+        BigDecimal breakFastTotal = breakfastPerNight.multiply(totalNights).subtract(breakFastDiscount);
+
+        // apply discount to lunch for the total night duration
+        BigDecimal lunchPerNightDiscount = lunchPerNight.multiply(totalNights)
+                .multiply(BigDecimal.valueOf(MealPlan.CHILD_DISCOUNT_PERCENT));
+        BigDecimal lunchTotal = lunchPerNight.multiply(totalNights).subtract(lunchPerNightDiscount);
+
+        // apply discount to dinner for the total night duration
+        BigDecimal dinnerPerNightDiscount = dinnerPerNight.multiply(totalNights)
+                .multiply(BigDecimal.valueOf(MealPlan.CHILD_DISCOUNT_PERCENT));
+        BigDecimal dinnerTotal = dinnerPerNight.multiply(totalNights).subtract(dinnerPerNightDiscount);
+
         MealPlan mealPlan = new MealPlan(guest, reservation, foodExtras, List.of());
 
-        BigDecimal foodExtrasTotal = breakfastPerNight.multiply(totalNights)
-                .add(lunchPerNight.multiply(totalNights))
-                .add(dinnerPerNight.multiply(totalNights));
+        BigDecimal foodExtrasTotal = breakFastTotal.add(lunchTotal).add(dinnerTotal);
+        assertThat(mealPlan.getTotalMealPlanCost()).isEqualTo(foodExtrasTotal);
+    }
 
-        BigDecimal discount = foodExtrasTotal.multiply(BigDecimal.valueOf(Reservation.CHILD_DISCOUNT_PERCENT));
-        BigDecimal expectedTotal = foodExtrasTotal.subtract(discount);
+    @Test
+    public void calculateExtraCost_InvalidExtraCategory_ThrowsException() {
+        Guest guest = new Guest("john", "smith", false);
+        Reservation reservation = new Reservation();
 
-        assertThat(mealPlan.getTotalMealPlanCost()).isEqualTo(expectedTotal);
+        reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
+        reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
+
+        MealPlan mealPlan = new MealPlan(guest, reservation, List.of(), List.of());
+
+        Extra extra = new Extra("foxtel", new BigDecimal("2.00"), Extra.Type.Basic, Extra.Category.General);
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> mealPlan.calculateExtraCost(extra));
+    }
+
+    @Test
+    public void calculateExtraCost_Adult_NoDiscountApplied() {
+        Guest guest = new Guest("john", "smith", false);
+        Reservation reservation = new Reservation();
+
+        BigDecimal totalNights = BigDecimal.valueOf(3);
+        reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
+        reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
+
+        // Adult prices form the base price, if guest is a child then discount is applied.
+        BigDecimal breakfastPerNight = new BigDecimal("2.00");
+
+        MealPlan mealPlan = new MealPlan(guest, reservation, List.of(), List.of());
+
+        BigDecimal expectedExtraCost = breakfastPerNight.multiply(totalNights);
+        Extra extra = new Extra("Breakfast", breakfastPerNight, Extra.Type.Basic, Extra.Category.Food);
+
+        assertThat(mealPlan.calculateExtraCost(extra)).isEqualTo(expectedExtraCost);
+    }
+
+    @Test
+    public void calculateExtraCost_Child_DiscountApplied() {
+        Guest guest = new Guest("john", "smith", true);
+        Reservation reservation = new Reservation();
+
+        BigDecimal totalNights = BigDecimal.valueOf(3);
+        reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
+        reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
+
+        // Adult prices form the base price, if guest is a child then discount is applied.
+        BigDecimal breakfastPerNight = new BigDecimal("2.00");
+
+        MealPlan mealPlan = new MealPlan(guest, reservation, List.of(), List.of());
+
+        BigDecimal discount = breakfastPerNight.multiply(totalNights)
+                .multiply(BigDecimal.valueOf(MealPlan.CHILD_DISCOUNT_PERCENT));
+        BigDecimal expectedTotal = breakfastPerNight.multiply(totalNights).subtract(discount);
+
+        Extra extra = new Extra("Breakfast", breakfastPerNight, Extra.Type.Basic, Extra.Category.Food);
+
+        assertThat(mealPlan.calculateExtraCost(extra)).isEqualTo(expectedTotal);
+    }
+
+    /**
+     * It should be an error if a guest is both vegan and vegetarian, its either one or the other not both.
+     */
+    @Test
+    public void hasInvalidDietaryRequirements_InvalidVeganAndVegetarian() {
+        Guest guest = new Guest("john", "smith", true);
+        Reservation reservation = new Reservation();
+
+        reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
+        reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
+
+        // cant contain vegan and vegetarian at the same time.
+        List<DietaryRequirement> dietaryRequirements = List.of(
+                DietaryRequirement.GlutenIntolerant,
+                DietaryRequirement.Vegetarian,
+                DietaryRequirement.Vegan,
+                DietaryRequirement.LactoseIntolerant
+        );
+
+        MealPlan mealPlan = new MealPlan(guest, reservation, List.of(), dietaryRequirements);
+        assertThat(mealPlan.hasInvalidDietaryRequirements()).isTrue();
+    }
+
+    /**
+     * Vegan and Vegetarian don't exist together which is valid.
+     */
+    @Test
+    public void hasInvalidDietaryRequirements_Valid() {
+        Guest guest = new Guest("john", "smith", true);
+        Reservation reservation = new Reservation();
+
+        reservation.getDates().setCheckInDate(LocalDate.of(2018, 1, 1));
+        reservation.getDates().setCheckOutDate(LocalDate.of(2018, 1, 4));
+
+        // cant contain vegan and vegetarian at the same time.
+        List<DietaryRequirement> dietaryRequirements = List.of(
+                DietaryRequirement.GlutenIntolerant,
+                DietaryRequirement.Vegan,
+                DietaryRequirement.LactoseIntolerant
+        );
+
+        MealPlan mealPlan = new MealPlan(guest, reservation, List.of(), dietaryRequirements);
+        assertThat(mealPlan.hasInvalidDietaryRequirements()).isFalse();
     }
 }

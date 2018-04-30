@@ -67,6 +67,11 @@ html, body {
     opacity: 0.4 !important;
 }
 
+.subtotal {
+    opacity: 0.6 !important;
+    font-size: 1.2em;
+}
+
 .inline {
     display: inline !important;
 }

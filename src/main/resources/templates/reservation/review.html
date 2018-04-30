@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
+<body>
+
+<div layout:fragment="content">
+    <div th:replace="~{reservation/fragments :: reservationFlowSteps(${reservationFlow})}"></div>
+
+    <div class="ui top attached segment"
+         th:with="timeFormatShort=#{time.format.short},dateFormatLong=#{date.format.long}">
+        <div class="ui blue top attached label">Summary</div>
+
+        <h3>Where & When</h3>
+        <a th:href="@{/hotel(id=${reservationFlow.reservation.room.hotel.id})}"
+           th:text="${reservationFlow.reservation.room.hotel.name}"></a>
+
+        <table class="ui very basic table">
+            <tbody>
+            <tr>
+                <td>Check in</td>
+                <td th:with="checkinDate=${#temporals.format(reservationFlow.reservation.dates.checkInDate, dateFormatLong)},
+                             checkinTime=${#temporals.format(reservationFlow.reservation.dates.estimatedCheckInTime, timeFormatShort)}"
+                    th:text="|${checkinDate} @ around ${checkinTime}|"></td>
+            </tr>
+            <tr>
+                <td>Check out</td>
+                <td th:text="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}">Check out</td>
+            </tr>
+            </tbody>
+        </table>
+
+
+        <div class="ui divider"></div>
+        <h3>Room</h3>
+        <table class="ui very basic table">
+            <tbody>
+            <tr>
+                <td>Room Type</td>
+                <td th:text="${reservationFlow.reservation.room.roomType}"></td>
+            </tr>
+            <tr>
+                <td>Room Number</td>
+                <td th:text="${reservationFlow.reservation.room.roomNumber}"></td>
+            </tr>
+            <tr>
+                <td>Cost per night</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></td>
+            </tr>
+            <tr>
+                <td># Beds</td>
+                <td th:text="${reservationFlow.reservation.room.beds}"></td>
+            </tr>
+            <tr>
+                <td># Nights</td>
+                <td th:text="${reservationFlow.reservation.dates.totalNights()}"></td>
+            </tr>
+            <tr>
+                <td># Guests</td>
+                <td th:text="${reservationFlow.reservation.guests.size()}"></td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th class="subtotal">Sub total</th>
+                <th>
+                    <h5 class="subtotal"
+                        th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalRoomCost())}"></h5>
+                </th>
+            </tr>
+            </tfoot>
+        </table>
+
+
+        <div th:unless="${reservationFlow.reservation.generalExtras.isEmpty()}">
+            <div class="ui divider"></div>
+            <h3>General Extras</h3>
+            <table class="ui very basic table">
+                <tbody>
+                <tr th:each="extra : ${reservationFlow.reservation.generalExtras}">
+                    <td th:text="${extra.description}"></td>
+                    <td th:with="totalNights=${reservationFlow.reservation.dates.totalNights()}"
+                        th:text="${#numbers.formatCurrency(extra.getTotalPrice(totalNights))}"></td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th class="subtotal">Sub total</th>
+                    <th>
+                        <h5 class="subtotal"
+                            th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalGeneralExtrasCost())}"></h5>
+                    </th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div th:unless="${reservationFlow.reservation.hasEmptyMealPlans()}">
+            <div class="ui divider"></div>
+            <h3>Meal Plans</h3>
+            <table class="ui very basic table">
+                <thead>
+                <tr>
+                    <th>Guest</th>
+                    <th>Meals</th>
+                    <th>Dietary Requirements</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="plan : ${reservationFlow.reservation.mealPlans}">
+                    <td th:text="${plan.guest.getFormattedFullName()}"></td>
+                    <td th:text="${plan.toFoodExtraCsv()}"></td>
+                    <td th:text="${plan.toDietRequirementsCsv()}"></td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th class="subtotal">Sub total</th>
+                    <th>
+                        <h5 class="subtotal"
+                            th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalMealPlansCost())}"></h5>
+                    </th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+
+
+        <div class="ui divider"></div>
+        <h3>Totals</h3>
+        <table class="ui very basic table">
+            <tbody>
+            <tr>
+                <td>Late Checkout</td>
+                <td th:with="fee=${reservationFlow.reservation.getChargeableLateCheckoutFee()}"
+                    th:text="${fee.compareTo(T(java.math.BigDecimal).ZERO) == 0} ? 'Free' : ${#numbers.formatCurrency(fee)}">
+                </td>
+            </tr>
+            <tr th:unless="${reservationFlow.reservation.generalExtras.isEmpty()}">
+                <td>General Extras</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalGeneralExtrasCost())}"></td>
+            </tr>
+            <tr th:unless="${reservationFlow.reservation.hasEmptyMealPlans()}">
+                <td>Meals</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalMealPlansCost())}"></td>
+            </tr>
+            <tr>
+                <td>Ex GST</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostExcludingTax())}"></td>
+            </tr>
+            <tr>
+                <td>GST</td>
+                <td th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTaxableAmount())}"></td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th>
+                    <h3>Due</h3>
+                </th>
+                <th>
+                    <h3
+                        th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostIncludingTax())}"></h3>
+                </th>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="ui top attached segment">
+        <div class="ui blue top attached label">Actions</div>
+        <div>
+            <button class="ui button" type="submit" name="back">Back</button>
+            <button class="ui button" type="submit">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="script">
+    <script>
+
+        $(document).ready(function () {
+            registerOnSubmitHandler("form");
+        });
+
+    </script>
+</th:block>
+
+</body>
+</html>

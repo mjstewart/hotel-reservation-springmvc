@@ -630,4 +630,73 @@ public class ReservationTest {
                 .extracting(MealPlan::getGuest)
                 .containsExactly(guestC, guestB, guestD, guestA);
     }
+
+    /**
+     * When each guest has a meal plan but no food extras are added, this should be treated as the meal
+     * plans being empty which is useful to not display meal sub totals on UI if there is nothing selected.
+     */
+    @Test
+    public void hasEmptyMealPlans_MealPlansWithNoFoodSumToZero() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+
+        // create room for 4 guests
+        room.setBeds(4);
+        reservation.setRoom(room);
+
+        Guest guestA = new Guest("a", "e", true);
+        reservation.addGuest(guestA);
+        Guest guestB = new Guest("b", "g", false);
+        reservation.addGuest(guestB);
+        Guest guestC = new Guest("b", "f", false);
+        reservation.addGuest(guestC);
+        Guest guestD = new Guest("a", "c", true);
+        reservation.addGuest(guestD);
+
+        // create the meal plans
+        reservation.createMealPlans();
+
+        // sanity check to ensure each guest has a meal plan
+        assertThat(reservation.getMealPlans().size()).isEqualTo(4);
+
+        // no guest added a food extra to the meal plan so should be empty!
+        assertThat(reservation.hasEmptyMealPlans()).isTrue();
+    }
+
+    /**
+     * When each guest has a meal plan but no food extras are added, this should be treated as the meal
+     * plans being empty which is useful to not display meal sub totals on UI if there is nothing selected.
+     */
+    @Test
+    public void hasEmptyMealPlans_MealPlansHaveFood() {
+        Reservation reservation = new Reservation();
+        Room room = createRoom();
+
+        // create room for 4 guests
+        room.setBeds(4);
+        reservation.setRoom(room);
+
+        Guest guestA = new Guest("a", "e", true);
+        reservation.addGuest(guestA);
+        Guest guestB = new Guest("b", "g", false);
+        reservation.addGuest(guestB);
+        Guest guestC = new Guest("b", "f", false);
+        reservation.addGuest(guestC);
+        Guest guestD = new Guest("a", "c", true);
+        reservation.addGuest(guestD);
+
+        // create the meal plans
+        reservation.createMealPlans();
+
+        // sanity check to ensure each guest has a meal plan
+        assertThat(reservation.getMealPlans().size()).isEqualTo(4);
+
+        // pick a random meal plan and add food to it which will cause the total price to be > 0.
+        reservation.getMealPlans().get(0).setFoodExtras(List.of(
+                new Extra("breakfast", BigDecimal.valueOf(5.50), Extra.Type.Basic, Extra.Category.Food)
+        ));
+
+        // 1 guest has a food extra
+        assertThat(reservation.hasEmptyMealPlans()).isFalse();
+    }
 }

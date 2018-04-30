@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 @Entity
 public class Reservation {
     public static final double TAX_AMOUNT = 0.10;
-    public static final double CHILD_DISCOUNT_PERCENT = 0.60;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -293,6 +292,19 @@ public class Reservation {
                 .map(guest -> new MealPlan(guest, this))
                 .sorted(Comparator.comparing(MealPlan::getGuest, Guest.comparator()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Since {@link #createMealPlans} creates a meal plan for each {@code Guest}. Simply checking the list size is
+     * not going to tell you if the meal plans are empty. Instead empty is defined by the total being zero dollars.
+     *
+     * @return {@code true} if all meal plans add up to 0.
+     */
+    public boolean hasEmptyMealPlans() {
+        return mealPlans.stream()
+                .map(MealPlan::getTotalMealPlanCost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add, BigDecimal::add)
+                .equals(BigDecimal.ZERO);
     }
 
 //    /**

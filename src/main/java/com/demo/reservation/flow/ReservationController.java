@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Controller
 @SessionAttributes("reservationFlow")
@@ -245,21 +247,60 @@ public class ReservationController {
     }
 
     @GetMapping("/reservation/meals")
-    public String getMealPlans(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow, Model model) {
+    public String getMealPlans(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                               Model model) {
         reservationFlow.setActive(ReservationFlow.Step.Meals);
 
         reservationFlow.getReservation().createMealPlans();
+        createMealPlanModel(reservationFlow, model);
+        return "reservation/meals";
+    }
 
+    private void createMealPlanModel(ReservationFlow reservationFlow, Model model) {
         List<Extra> foodExtras = extraRepository.findAllByTypeAndCategory(
                 reservationFlow.getReservation().getExtraPricingType(),
                 Extra.Category.Food
         );
         model.addAttribute("foodExtras", foodExtras);
         model.addAttribute("dietaryRequirements", DietaryRequirement.values());
-
-        return "reservation/meals";
     }
 
+    @PostMapping(value = "/reservation/meals", params = "add")
+    public String postMealPlansAjax(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow) {
+        return "reservation/fragments :: quickSummary";
+    }
+
+    @PostMapping("/reservation/meals")
+    public String postMealPlans(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                Errors errors, Model model, RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Meals);
+
+        Reservation reservation = reservationFlow.getReservation();
+        for (int i = 0; i < reservation.getMealPlans().size(); i++) {
+            // The template uses validationFieldPath variable to refer to the error field on the reservation object.
+            if (reservation.getMealPlans().get(i).hasInvalidDietaryRequirements()) {
+                errors.rejectValue("reservation.mealPlans[" + i + "].dietaryRequirements", "VeganMismatch",
+                        "Cannot be Vegan and Vegetarian at the same time");
+            }
+        }
+
+        if (errors.hasFieldErrors()) {
+            createMealPlanModel(reservationFlow, model);
+            return "reservation/meals";
+        }
+
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        reservationFlow.completeStep(ReservationFlow.Step.Meals);
+        return "redirect:/reservation/review";
+    }
+
+
+    // Flow step 5 - review
+
+    @GetMapping("/reservation/review")
+    public String getReview(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow) {
+        return "reservation/review";
+    }
 
     @GetMapping("/drinks")
     public String getDrinks(Model model) {

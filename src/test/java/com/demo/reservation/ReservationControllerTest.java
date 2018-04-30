@@ -24,8 +24,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 import static com.demo.GlobalErrorMatchers.globalErrorMatchers;
 import static com.demo.reservation.flow.forms.FlowMatchers.*;
@@ -829,7 +831,7 @@ public class ReservationControllerTest {
                 .sessionAttr("reservationFlow", reservationFlow))
                 .andExpect(view().name("reservation/meals"))
                 .andExpect(model().attribute("foodExtras", Matchers.equalTo(foodExtras)))
-                .andExpect(model().attributeExists("dietaryRequirements"))
+                .andExpect(model().attribute("dietaryRequirements", Matchers.equalTo(DietaryRequirement.values())))
                 .andExpect(model().attributeExists("reservationFlow"))
                 .andExpect(expectedMealPlansCreated)
                 .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Meals))
@@ -840,5 +842,105 @@ public class ReservationControllerTest {
         verifyNoMoreInteractions(extraRepository);
 
         verify(reservationSpy, times(1)).createMealPlans();
+    }
+
+    /**
+     * When the meal plans are submitted, check the flow step is completed for Meals and
+     * we redirect to the next review view. flash attributes are needed so the Model state is not lost
+     * across the redirect. Since there are no errors, the Model doesn't need to contain the foodExtras or
+     * dietaryRequirements since we are redirecting to a new view.
+     *
+     * <p>We cant test for checking the meal plans have been updated within the reservation since all of that
+     * happens using spring binding infrastructure so would need to make an integration test for that using
+     * {@literal @SpringBootTest}.</p>
+     */
+    @Test
+    public void postMealPlans_ValidDietaryRequirements() throws Exception {
+        ReservationFlow reservationFlow = extrasCompletedFlow();
+
+        Room room = createRoom();
+        Guest guest = new Guest("john", "smith", false);
+        Reservation reservation = new Reservation();
+        reservation.setRoom(room);
+        reservation.addGuest(guest);
+        reservation.createMealPlans();
+
+        // The meal plan for the only guest
+        MealPlan mealPlan = reservation.getMealPlans().get(0);
+        mealPlan.setFoodExtras(List.of(new Extra("breakfast", BigDecimal.valueOf(3.4), Extra.Type.Basic, Extra.Category.Food)));
+
+        // valid diets
+        mealPlan.setDietaryRequirements(List.of(DietaryRequirement.Vegan, DietaryRequirement.GlutenIntolerant));
+
+        mockMvc.perform(post("/reservation/meals")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("redirect:/reservation/review"))
+                .andExpect(flash().attributeExists("reservationFlow"))
+                .andExpect(flash().attribute("foodExtras", Matchers.nullValue()))
+                .andExpect(flash().attribute("dietaryRequirements", Matchers.nullValue()))
+                .andExpect(flashHasActiveFlowStep(ReservationFlow.Step.Meals))
+                .andExpect(flashHasCompletedFlowStep(ReservationFlow.Step.Meals));
+    }
+
+    /**
+     * <p>Should get validation error when a guest is vegan and vegetarian at the same time. Can only be
+     * one or the other. Since there are errors, the same Model created when getting the meal plan form
+     * needs to exist otherwise the food extras and dietary requirement checkboxes wont re appear.</p>
+     *
+     * <p>We cant test for checking the meal plans have been updated within the reservation since all of that
+     * happens using spring binding infrastructure so would need to make an integration test for that using
+     * {@literal @SpringBootTest}.</p>
+     */
+    @Test
+    public void postMealPlans_InvalidDietaryRequirements() throws Exception {
+        ReservationFlow reservationFlow = extrasCompletedFlow();
+        Reservation reservation = reservationFlow.getReservation();
+
+        Room room = createRoom();
+        // Allow 2 guest to be added
+        room.setBeds(2);
+        Guest guestA = new Guest("john", "smith", false);
+        Guest guestB = new Guest("nicole", "clarke", false);
+
+        reservation.setRoom(room);
+        reservation.addGuest(guestA);
+        reservation.addGuest(guestB);
+        reservation.createMealPlans();
+
+        // Make both guests have invalid dietary requirements.
+        MealPlan mealPlanA = reservation.getMealPlans().get(0);
+        MealPlan mealPlanB = reservation.getMealPlans().get(1);
+        mealPlanA.setFoodExtras(List.of(new Extra("breakfast", BigDecimal.valueOf(3.4), Extra.Type.Basic, Extra.Category.Food)));
+        mealPlanB.setFoodExtras(List.of(new Extra("breakfast", BigDecimal.valueOf(3.4), Extra.Type.Basic, Extra.Category.Food)));
+
+        // invalid diets
+        mealPlanA.setDietaryRequirements(List.of(DietaryRequirement.Vegan, DietaryRequirement.Vegetarian, DietaryRequirement.GlutenIntolerant));
+        mealPlanB.setDietaryRequirements(List.of(DietaryRequirement.Vegan, DietaryRequirement.Vegetarian, DietaryRequirement.GlutenIntolerant));
+
+        // Recreate the food extras
+        List<Extra> foodExtras = List.of(
+                new Extra("breakfast", BigDecimal.valueOf(3.20), Extra.Type.Basic, Extra.Category.Food),
+                new Extra("lunch", BigDecimal.valueOf(5.40), Extra.Type.Basic, Extra.Category.Food),
+                new Extra("dinner", BigDecimal.valueOf(8.90), Extra.Type.Basic, Extra.Category.Food)
+        );
+
+        // So we can verify the correct call to get the food extras occurs.
+        when(extraRepository.findAllByTypeAndCategory(any(Extra.Type.class), eq(Extra.Category.Food)))
+                .thenReturn(foodExtras);
+
+        mockMvc.perform(post("/reservation/meals")
+                .sessionAttr("reservationFlow", reservationFlow))
+                .andExpect(view().name("reservation/meals"))
+                .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.mealPlans[0].dietaryRequirements", "VeganMismatch"))
+                .andExpect(model().attributeHasFieldErrorCode("reservationFlow", "reservation.mealPlans[1].dietaryRequirements", "VeganMismatch"))
+                .andExpect(model().attributeExists("reservationFlow"))
+                .andExpect(model().attribute("foodExtras", Matchers.equalTo(foodExtras)))
+                .andExpect(model().attribute("dietaryRequirements", Matchers.equalTo(DietaryRequirement.values())))
+                .andExpect(modelHasActiveFlowStep(ReservationFlow.Step.Meals))
+                .andExpect(modelHasIncompleteFlowStep(ReservationFlow.Step.Meals));
+
+        verify(extraRepository, times(1))
+                .findAllByTypeAndCategory(any(Extra.Type.class), eq(Extra.Category.Food));
+        verifyNoMoreInteractions(extraRepository);
     }
 }
