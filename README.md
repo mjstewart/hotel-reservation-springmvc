@@ -12,7 +12,7 @@ Key features include
 - Extensive spring mvc tests + mockito.
 
 
-This project was motivated by another project I created using spring web flow 
+This project was motivated by another project I createdTime using spring web flow 
 https://github.com/mjstewart/hotel-reservations. I wanted
 to compare webflow against a native session based solution using existing spring mvc 
 constructs.

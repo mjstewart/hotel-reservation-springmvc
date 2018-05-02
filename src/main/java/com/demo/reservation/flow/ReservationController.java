@@ -12,11 +12,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +69,7 @@ public class ReservationController {
             throw new NotFoundException();
         }
 
-        reservationFlow.getReservation().setRoom(maybeRoom.get());
+        maybeRoom.get().setReservation(reservationFlow.getReservation());
 
         return "reservation/dates";
     }
@@ -129,8 +131,9 @@ public class ReservationController {
 
     @PostMapping(value = "/reservation/guests", params = "back")
     public String fromGuestBackToDates(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
-                                       RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("reservationFlow", reservationFlow);
+                                       RedirectAttributes ra) {
+        reservationFlow.enterStep(ReservationFlow.Step.Guests);
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
         return "redirect:/reservation?roomId=" + reservationFlow.getReservation().getRoom().getId();
     }
 
@@ -180,7 +183,7 @@ public class ReservationController {
     @PostMapping(value = "/reservation/guests")
     public String postGuestToExtras(@ModelAttribute(binding = false) Guest guest,
                                     Errors errors,
-                                    @ModelAttribute ReservationFlow reservationFlow,
+                                    @ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
                                     RedirectAttributes redirectAttributes) {
         reservationFlow.enterStep(ReservationFlow.Step.Guests);
 
@@ -216,6 +219,7 @@ public class ReservationController {
     @PostMapping(value = "/reservation/extras", params = "back")
     public String fromGeneralExtrasBackToGuests(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
                                                 RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Guests);
         ra.addFlashAttribute("reservationFlow", reservationFlow);
         return "redirect:/reservation/guests";
     }
@@ -294,13 +298,91 @@ public class ReservationController {
         return "redirect:/reservation/review";
     }
 
-
     // Flow step 5 - review
 
     @GetMapping("/reservation/review")
     public String getReview(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow) {
+        reservationFlow.setActive(ReservationFlow.Step.Review);
         return "reservation/review";
     }
+
+    @PostMapping(value = "/reservation/review", params = "back")
+    public String fromReviewBackToMealPlans(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                            RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Review);
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        return "redirect:/reservation/meals";
+    }
+
+    @PostMapping("/reservation/review")
+    public String postReview(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                             RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Review);
+
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        reservationFlow.completeStep(ReservationFlow.Step.Review);
+        return "redirect:/reservation/payment";
+    }
+
+
+    // Flow step 6 - payment
+
+    @GetMapping("/reservation/payment")
+    public String getPayment(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                             Model model) {
+        reservationFlow.setActive(ReservationFlow.Step.Payment);
+        model.addAttribute("pendingPayment", new PendingPayment(LocalDateTime.now()));
+        return "reservation/payment";
+    }
+
+    @PostMapping(value = "/reservation/payment", params = "back")
+    public String fromPaymentBackToReview(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                                          RedirectAttributes ra) {
+        reservationFlow.setActive(ReservationFlow.Step.Payment);
+        ra.addFlashAttribute("reservationFlow", reservationFlow);
+        return "redirect:/reservation/review";
+    }
+
+    @PostMapping(value = "/reservation/payment", params = "cancel")
+    public String cancelPayment(SessionStatus sessionStatus) {
+        sessionStatus.setComplete();
+        return "redirect:/";
+    }
+
+    @PostMapping("/reservation/payment")
+    public String postPayment(@ModelAttribute("reservationFlow") ReservationFlow reservationFlow,
+                              @Valid @ModelAttribute("pendingPayment") PendingPayment pendingPayment,
+                              BindingResult bindingResult, SessionStatus sessionStatus) {
+        reservationFlow.setActive(ReservationFlow.Step.Payment);
+
+        if (bindingResult.hasErrors()) {
+            return "reservation/payment";
+        }
+
+        Reservation reservation = reservationFlow.getReservation();
+        // Simulate making a valid payment
+        reservation.setCompletedPayment(pendingPayment.toCompletedPayment());
+
+        /*
+         * The new reservation is saved through the Room since the room owns the reservation in the
+         * bi directional 1 to 1 mapping. This is to allow easier querying to identity rooms that
+         * have reservations.
+         */
+        roomRepository.save(reservation.getRoom());
+        sessionStatus.setComplete();
+
+        reservationFlow.completeStep(ReservationFlow.Step.Payment);
+        return "redirect:/reservation/completed";
+    }
+
+
+    // End flow
+
+    @GetMapping("/reservation/completed")
+    public String getFlowCompleted() {
+        return "reservation/completed";
+    }
+
 
     @GetMapping("/drinks")
     public String getDrinks(Model model) {
@@ -313,6 +395,7 @@ public class ReservationController {
 
         model.addAttribute("person", person);
         model.addAttribute("selectableDrinks", selectableDrinks);
+
 
         return "reservation/drinks";
     }

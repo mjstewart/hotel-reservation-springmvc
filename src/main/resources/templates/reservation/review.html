@@ -25,7 +25,9 @@
             </tr>
             <tr>
                 <td>Check out</td>
-                <td th:text="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}">Check out</td>
+                <td th:text="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}">Check
+                    out
+                </td>
             </tr>
             </tbody>
         </table>
@@ -159,20 +161,21 @@
                     <h3>Due</h3>
                 </th>
                 <th>
-                    <h3
-                        th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostIncludingTax())}"></h3>
+                    <h3 th:text="${#numbers.formatCurrency(reservationFlow.reservation.getTotalCostIncludingTax())}"></h3>
                 </th>
             </tr>
             </tfoot>
         </table>
     </div>
 
-    <div class="ui top attached segment">
+    <div class="ui top attached segment margin-top-10">
         <div class="ui blue top attached label">Actions</div>
-        <div>
-            <button class="ui button" type="submit" name="back">Back</button>
-            <button class="ui button" type="submit">Confirm</button>
-        </div>
+        <form id="form" th:action="@{/reservation/review}" method="post">
+            <div>
+                <button class="ui button" type="submit" name="back">Back</button>
+                <button class="ui button" type="submit">Confirm</button>
+            </div>
+        </form>
     </div>
 </div>
 

@@ -1,5 +1,6 @@
-package com.demo.reservation.flow.forms;
+package com.demo.reservation.flow.helpers;
 
+import com.demo.reservation.flow.forms.ReservationFlow;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -10,9 +11,6 @@ import java.util.function.Function;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
-/**
- *
- */
 public class FlowMatchers {
 
     /**
@@ -46,8 +44,8 @@ public class FlowMatchers {
      * @param <T>        The value produced by the mapping function.
      * @return The corresponding {@code FeatureMatcher}.
      */
-    private static <T> FeatureMatcher<ReservationFlow, T> flowStateAssertion(Function<ReservationFlow, T> mapper,
-                                                                             Matcher<T> subMatcher) {
+    public static <T> FeatureMatcher<ReservationFlow, T> flowStateAssertion(Function<ReservationFlow, T> mapper,
+                                                                            Matcher<T> subMatcher) {
         return new FeatureMatcher<>(subMatcher, "flowStateAssertion", "flowStateAssertion") {
             @Override
             protected T featureValueOf(ReservationFlow reservationFlow) {

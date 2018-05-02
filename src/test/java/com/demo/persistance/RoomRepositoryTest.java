@@ -17,6 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,6 +69,8 @@ public class RoomRepositoryTest {
         reservationDates.setCheckOutDate(LocalDate.now().plusDays(3));
         reservationDates.setEstimatedCheckInTime(LocalTime.of(10, 0));
         reservationDates.setPolicyAcknowledged(true);
+        reservation.setCompletedPayment(new CompletedPayment(PendingPayment.CreditCardType.MasterCard,
+                "3455", "344", YearMonth.of(2018, 1)));
         reservation.setDates(reservationDates);
 
         roomB.setReservation(reservation);
@@ -101,18 +104,22 @@ public class RoomRepositoryTest {
         reservationDatesA.setEstimatedCheckInTime(LocalTime.of(10, 0));
         reservationDatesA.setPolicyAcknowledged(true);
         reservationA.setDates(reservationDatesA);
+        reservationA.setCompletedPayment(new CompletedPayment(PendingPayment.CreditCardType.MasterCard,
+                "3455", "344", YearMonth.of(2018, 1)));
         roomA.setReservation(reservationA);
 
         // boiler plate to create a valid reservation...
         Room roomB = new Room("B", RoomType.Economy, 4, BigDecimal.valueOf(45.4));
-        Reservation reservation = new Reservation();
-        ReservationDates reservationDates = new ReservationDates();
-        reservationDates.setCheckInDate(LocalDate.now());
-        reservationDates.setCheckOutDate(LocalDate.now().plusDays(3));
-        reservationDates.setEstimatedCheckInTime(LocalTime.of(10, 0));
-        reservationDates.setPolicyAcknowledged(true);
-        reservation.setDates(reservationDates);
-        roomB.setReservation(reservation);
+        Reservation reservationB = new Reservation();
+        ReservationDates reservationDatesB = new ReservationDates();
+        reservationDatesB.setCheckInDate(LocalDate.now());
+        reservationDatesB.setCheckOutDate(LocalDate.now().plusDays(3));
+        reservationDatesB.setEstimatedCheckInTime(LocalTime.of(10, 0));
+        reservationDatesB.setPolicyAcknowledged(true);
+        reservationB.setDates(reservationDatesB);
+        reservationB.setCompletedPayment(new CompletedPayment(PendingPayment.CreditCardType.MasterCard,
+                "3455", "344", YearMonth.of(2018, 1)));
+        roomB.setReservation(reservationB);
 
         hotel.addRoom(roomA);
         hotel.addRoom(roomB);

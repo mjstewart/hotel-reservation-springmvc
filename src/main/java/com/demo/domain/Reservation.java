@@ -32,7 +32,6 @@ public class Reservation {
     @Valid
     private ReservationDates dates = new ReservationDates();
 
-    // no CascadeType since Extra already has an id associated to it.
     @ManyToMany
     @JoinTable(
             name = "reservation_general_extras",
@@ -45,20 +44,17 @@ public class Reservation {
     @OneToMany(cascade = CascadeType.ALL)
     private List<MealPlan> mealPlans = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    public Set<Payment> attemptedPayments = new HashSet<>();
+    @OneToOne(cascade = CascadeType.ALL)
+    private CompletedPayment completedPayment;
 
-    public LocalDateTime createdTime;
+    @Column(nullable = false)
+    private LocalDateTime createdTime;
 
     /**
      * @return The time this {@code Reservation} was successfully paid for and persisted.
      */
     public LocalDateTime getCreatedTime() {
         return createdTime;
-    }
-
-    public void setCreatedTimeNow() {
-        createdTime = LocalDateTime.now();
     }
 
     public Reservation() {
@@ -78,6 +74,19 @@ public class Reservation {
 
     public void setRoom(Room room) {
         this.room = room;
+    }
+
+    public CompletedPayment getCompletedPayment() {
+        return completedPayment;
+    }
+
+    public void setCompletedPayment(CompletedPayment completedPayment) {
+        createdTime = LocalDateTime.now();
+        this.completedPayment = completedPayment;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
     }
 
     /**
@@ -307,83 +316,16 @@ public class Reservation {
                 .equals(BigDecimal.ZERO);
     }
 
-//    /**
-//     * Useful for UI template rendering.
-//     *
-//     * @return List of sorted {@code MealPlan}s according to the {@code Guest} comparator.
-//     */
-//    public List<MealPlan> getSortedMealPlansByGuest() {
-//        return mealPlans.stream()
-//                .sorted(Comparator.comparing(MealPlan::getGuest, Guest.comparator()))
-//                .collect(Collectors.toList());
-//    }
-//
-//    /**
-//     *
-//     * @return List of sorted {@code Guest}s.
-//     */
-//    public List<Guest> getSortedGuests() {
-//        return guests.stream()
-//                .sorted(Guest.comparator())
-//                .collect(Collectors.toList());
-//    }
-//
-//    /**
-//     * Used by UI templates to decide when to include in the payment summary since
-//     * only food extras have a payment associated with them unlike dietary requirements.
-//     *
-//     * @return {@code true} if there exists at least 1 meal plan which has a food extra such as
-//     * breakfast, lunch or dinner.
-//     */
-//    public boolean hasMealPlansWithFoodExtras() {
-//        return mealPlans.stream()
-//                .anyMatch(MealPlan::hasFoodExtras);
-//    }
-//
-//    /**
-//     *
-//     * @return {@code true} if the {@code MealPlan} has a food plan or diet requirement.
-//     */
-//    public boolean hasMealPlans() {
-//        return mealPlans.stream()
-//                .anyMatch(mealPlan -> mealPlan.hasFoodExtras() || mealPlan.hasDietRequirements());
-//    }
-//
-//    /**
-//     * A history of {@code Payment}s are kept since its possible a payment may be declined and reattempted which
-//     * we capture for potential payment investigations.
-//     *
-//     * @param payment
-//     */
-//    public void addAttemptedPayment(Payment payment) {
-//        attemptedPayments.add(payment);
-//    }
-//
-//    public List<Guest> getPrimaryContacts() {
-//        return guests.stream()
-//                .filter(Guest::isPrimaryContact)
-//                .collect(Collectors.toList());
-//    }
-//
-//    @Override
-//    public boolean equals(Object o) {
-//        if (this == o) return true;
-//        if (o == null || getClass() != o.getClass()) return false;
-//        Reservation that = (Reservation) o;
-//        return Objects.equals(reservationId, that.reservationId);
-//    }
-//
-//    @Override
-//    public int hashCode() {
-//        return Objects.hash(reservationId);
-//    }
-//
-
     @Override
-    public String toString() {
-        return "Reservation{" +
-                "room=" + room +
-                '}';
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Reservation that = (Reservation) o;
+        return Objects.equals(reservationId, that.reservationId);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(reservationId);
+    }
 }

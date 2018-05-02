@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{core-layout}">
+<body>
+
+<div layout:fragment="content">
+    <div th:replace="~{reservation/fragments :: reservationFlowSteps(${reservationFlow})}"></div>
+
+    <div class="ui top attached segment">
+        <div class="ui top attached label">Payment Information</div>
+
+        <form id="form" class="ui form" th:action="@{/reservation/payment}" method="post" th:object="${pendingPayment}">
+
+            <input type="hidden" th:field="*{createdTime}" th:value="*{createdTime}">
+
+            <div class="field"
+                 th:with="hasError=${#fields.hasErrors('creditCardType')}"
+                 th:classappend="${hasError} ? 'error'">
+                <label>Card Type</label>
+                <select class="ui fluid search dropdown" th:field="*{creditCardType}">
+                    <option th:each="cardType : ${T(com.demo.domain.PendingPayment.CreditCardType).values()}"
+                            th:value="${cardType}" th:text="${cardType.description}"></option>
+                </select>
+                <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{creditCardType}"></div>
+            </div>
+
+            <div class="field"
+                 th:with="hasError=${#fields.hasErrors('cardHolderName')}"
+                 th:classappend="${hasError} ? 'error'">
+                <label>Card holder name</label>
+                <input type="text" th:field="*{cardHolderName}">
+                <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{cardHolderName}"></div>
+            </div>
+
+            <div class="fields">
+                <div class="seven wide field"
+                     th:with="hasError=${#fields.hasErrors('creditCardNumber')}"
+                     th:classappend="${hasError} ? 'error'">
+                    <label>Card Number</label>
+                    <input type="text" maxlength="10" placeholder="Card #" th:field="*{creditCardNumber}">
+                    <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{creditCardNumber}"></div>
+                </div>
+                <div class="three wide field"
+                     th:with="hasError=${#fields.hasErrors('cvv')}"
+                     th:classappend="${hasError} ? 'error'">
+                    <label>CVV</label>
+                    <input type="text" maxlength="3" placeholder="CVV" th:field="*{cvv}">
+                    <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{cvv}"></div>
+                </div>
+                <div class="six wide field">
+                    <label>Expiration</label>
+                    <div class="two fields">
+                        <div class="field"
+                             th:with="hasError=${#fields.hasErrors('cardExpiryYear')}"
+                             th:classappend="${hasError} ? 'error'">
+                            <select class="ui fluid search dropdown" th:field="*{cardExpiryYear}">
+                                <option th:each="year : *{validExpiryYears()}"
+                                        th:value="${year}" th:text="${year}">
+                                </option>
+                            </select>
+                            <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{cardExpiryYear}"></div>
+                        </div>
+                        <div class="field"
+                             th:with="hasError=${#fields.hasErrors('cardExpiryMonth')}"
+                             th:classappend="${hasError} ? 'error'">
+                            <select class="ui fluid search dropdown" th:field="*{cardExpiryMonth}">
+                                <option th:each="month : *{validExpiryMonths()}"
+                                        th:value="${month}" th:text="${@templateUtil.formatMonth(month)}">
+                                </option>
+                            </select>
+                            <div class="ui pointing red basic label" th:if="${hasError}" th:errors="*{cardExpiryMonth}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <button class="ui button" type="submit" name="back">Back</button>
+                <button class="ui button" type="submit" name="cancel">Cancel</button>
+                <button class="ui button" type="submit">Pay</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block layout:fragment="script">
+    <script>
+
+        $(document).ready(function () {
+            registerOnSubmitHandler("form");
+        });
+
+    </script>
+</th:block>
+
+</body>
+</html>

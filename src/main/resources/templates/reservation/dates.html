@@ -6,146 +6,147 @@
 <div layout:fragment="content" th:with="dateFormatLong=#{date.format.long},timeFormatShort=#{time.format.short}">
     <div th:replace="~{reservation/fragments :: reservationFlowSteps(${reservationFlow})}"></div>
 
-    <form id="form" th:action="@{/reservation/dates}" method="post" th:object="${reservationFlow.reservation.dates}">
-        <div class="ui form">
-            <div class="field">
-                <div class="ui top attached segment">
-                    <div class="ui top attached label"
-                         th:text="${reservationFlow.getActiveStepDescription().getDescription()}">
-                    </div>
+    <form id="form" class="ui form" th:action="@{/reservation/dates}" method="post"
+          th:object="${reservationFlow.reservation.dates}">
 
-                    <div class="two fields">
-                        <div class="field required"
-                             th:with="hasError=${#fields.hasErrors('checkInDate')}"
-                             th:classappend="${hasError} ? 'error'">
-                            <label for="checkInDatePicker">Check in date</label>
-                            <input id="checkInDatePicker" type="text"
-                                   th:value="${#temporals.format(reservationFlow.reservation.dates.checkInDate, dateFormatLong)}"/>
-                            <div class="ui pointing red basic label" th:if="${hasError}"
-                                 th:errors="*{checkInDate}"></div>
-                            <input type="hidden" id="altCheckInDatePicker" th:field="*{checkInDate}">
-                        </div>
-                        <div class="field required"
-                             th:with="hasError=${#fields.hasErrors('checkOutDate')}"
-                             th:classappend="${hasError} ? 'error'">
-                            <label for="checkOutDatePicker">Check out date</label>
-                            <input id="checkOutDatePicker" type="text"
-                                   th:value="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}"/>
-                            <div class="ui pointing red basic label" th:if="${hasError}"
-                                 th:errors="*{checkOutDate}"></div>
-                            <input type="hidden" id="altCheckOutDatePicker" th:field="*{checkOutDate}">
-                        </div>
+        <div class="field">
+            <div class="ui top attached segment">
+                <div class="ui top attached label"
+                     th:text="${reservationFlow.getActiveStepDescription().getDescription()}">
+                </div>
+
+                <div class="two fields">
+                    <div class="field required"
+                         th:with="hasError=${#fields.hasErrors('checkInDate')}"
+                         th:classappend="${hasError} ? 'error'">
+                        <label for="checkInDatePicker">Check in date</label>
+                        <input id="checkInDatePicker" type="text"
+                               th:value="${#temporals.format(reservationFlow.reservation.dates.checkInDate, dateFormatLong)}"/>
+                        <div class="ui pointing red basic label" th:if="${hasError}"
+                             th:errors="*{checkInDate}"></div>
+                        <input type="hidden" id="altCheckInDatePicker" th:field="*{checkInDate}">
                     </div>
-                    <div class="field required">
-                        <label for="estimatedCheckInTime">Estimated check in time</label>
-                        <select id="estimatedCheckInTime" class="ui fluid dropdown" th:field="*{estimatedCheckInTime}">
-                            <option th:each="time,stat : ${reservationFlow.reservation.room.hotel.allowableCheckInTimes()}"
-                                    th:value="${time}" th:text="${#temporals.format(time, timeFormatShort)}"></option>
-                        </select>
+                    <div class="field required"
+                         th:with="hasError=${#fields.hasErrors('checkOutDate')}"
+                         th:classappend="${hasError} ? 'error'">
+                        <label for="checkOutDatePicker">Check out date</label>
+                        <input id="checkOutDatePicker" type="text"
+                               th:value="${#temporals.format(reservationFlow.reservation.dates.checkOutDate, dateFormatLong)}"/>
+                        <div class="ui pointing red basic label" th:if="${hasError}"
+                             th:errors="*{checkOutDate}"></div>
+                        <input type="hidden" id="altCheckOutDatePicker" th:field="*{checkOutDate}">
                     </div>
                 </div>
+                <div class="field required">
+                    <label for="estimatedCheckInTime">Estimated check in time</label>
+                    <select id="estimatedCheckInTime" class="ui fluid search dropdown"
+                            th:field="*{estimatedCheckInTime}">
+                        <option th:each="time,stat : ${reservationFlow.reservation.room.hotel.allowableCheckInTimes()}"
+                                th:value="${time}" th:text="${#temporals.format(time, timeFormatShort)}"></option>
+                    </select>
+                </div>
             </div>
+        </div>
 
-            <div class="field">
-                <div class="ui top attached segment">
-                    <div class="ui top attached label">Reservation policy</div>
-                    <p>By acknowledging our check in and check out policies, you understand the following</p>
-                    <ul>
-                        <li th:text="|Please check in between
+        <div class="field">
+            <div class="ui top attached segment">
+                <div class="ui top attached label">Reservation policy</div>
+                <p>By acknowledging our check in and check out policies, you understand the following</p>
+                <ul>
+                    <li th:text="|Please check in between
                         ${#temporals.format(reservationFlow.reservation.room.hotel.earliestCheckInTime, timeFormatShort)} and
                         ${#temporals.format(reservationFlow.reservation.room.hotel.latestCheckInTime, timeFormatShort)}|"></li>
 
-                        <li th:text="|Standard check out time is by ${#temporals.format(reservationFlow.reservation.room.hotel.standardCheckOutTime, timeFormatShort)}
+                    <li th:text="|Standard check out time is by ${#temporals.format(reservationFlow.reservation.room.hotel.standardCheckOutTime, timeFormatShort)}
                         (Select late check out option to extend this time)|"></li>
-                    </ul>
+                </ul>
 
-                    <div class="required field"
-                         th:with="hasError=${#fields.hasErrors('policyAcknowledged')}"
-                         th:classappend="${hasError} ? 'error'">
-                        <div class="ui checkbox" th:classappend="${hasError} ? 'margin-right-10'">
-                            <input type="checkbox" th:field="*{policyAcknowledged}">
-                            <label>I understand</label>
-                        </div>
-                        <div class="ui left pointing red basic label" th:if="${hasError}"
-                             th:errors="*{policyAcknowledged}"></div>
+                <div class="required field"
+                     th:with="hasError=${#fields.hasErrors('policyAcknowledged')}"
+                     th:classappend="${hasError} ? 'error'">
+                    <div class="ui checkbox" th:classappend="${hasError} ? 'margin-right-10'">
+                        <input type="checkbox" th:field="*{policyAcknowledged}">
+                        <label>I understand</label>
                     </div>
+                    <div class="ui left pointing red basic label" th:if="${hasError}"
+                         th:errors="*{policyAcknowledged}"></div>
+                </div>
 
-                    <div class="field">
-                        <div class="ui checkbox">
-                            <div class="flex-row-flow">
-                                <input type="checkbox" th:field="*{lateCheckout}" id="lateCheckout">
-                                <label class="margin-right-10" th:text="|Yes, I want to checkout by no later than
+                <div class="field">
+                    <div class="ui checkbox">
+                        <div class="flex-row-flow">
+                            <input type="checkbox" th:field="*{lateCheckout}" id="lateCheckout">
+                            <label class="margin-right-10" th:text="|Yes, I want to checkout by no later than
                             ${#temporals.format(reservationFlow.reservation.room.hotel.latestCheckOutTime, timeFormatShort)}|"></label>
 
-                                <div class="ui blue basic label" th:if="${noLateFee}">Free</div>
-                                <div class="ui blue basic label" th:unless="${noLateFee}"
-                                     th:text="|$${#numbers.formatDecimal(reservationFlow.reservation.room.hotel.lateCheckoutFee, 1, 2)}|"></div>
-                            </div>
+                            <div class="ui blue basic label" th:if="${noLateFee}">Free</div>
+                            <div class="ui blue basic label" th:unless="${noLateFee}"
+                                 th:text="|$${#numbers.formatDecimal(reservationFlow.reservation.room.hotel.lateCheckoutFee, 1, 2)}|"></div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="field" th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
+        <div class="field" th:insert="~{reservation/fragments :: globalErrors(${#fields.globalErrors()})}"></div>
 
-            <div class="field">
-                <div class="ui top attached segment">
-                    <div class="ui top blue attached label">Room Information</div>
+        <div class="field">
+            <div class="ui top attached segment">
+                <div class="ui top blue attached label">Room Information</div>
 
-                    <div class="ui basic segment">
-                        <div class="ui two column grid meta-table">
-                            <div class="row">
-                                <div class="four wide column">
-                                    <p class="meta-table__header">Hotel</p>
-                                </div>
-                                <div class="twelve wide column">
-                                    <a th:href="@{/hotel(id=${reservationFlow.reservation.room.hotel.id})}"
-                                       th:text="${reservationFlow.reservation.room.hotel.name}"></a>
-                                </div>
+                <div class="ui basic segment">
+                    <div class="ui two column grid meta-table">
+                        <div class="row">
+                            <div class="four wide column">
+                                <p class="meta-table__header">Hotel</p>
                             </div>
-                            <div class="row">
-                                <div class="four wide column">
-                                    <p class="meta-table__header">Room Type</p>
-                                </div>
-                                <div class="twelve wide column">
-                                    <p th:text="${reservationFlow.reservation.room.roomType}"></p>
-                                </div>
+                            <div class="twelve wide column">
+                                <a th:href="@{/hotel(id=${reservationFlow.reservation.room.hotel.id})}"
+                                   th:text="${reservationFlow.reservation.room.hotel.name}"></a>
                             </div>
-                            <div class="row">
-                                <div class="four wide column">
-                                    <p class="meta-table__header">Room Number</p>
-                                </div>
-                                <div class="twelve wide column">
-                                    <p th:text="${reservationFlow.reservation.room.roomNumber}"></p>
-                                </div>
+                        </div>
+                        <div class="row">
+                            <div class="four wide column">
+                                <p class="meta-table__header">Room Type</p>
                             </div>
-                            <div class="row">
-                                <div class="four wide column">
-                                    <p class="meta-table__header"># Beds</p>
-                                </div>
-                                <div class="twelve wide column">
-                                    <p th:text="${reservationFlow.reservation.room.beds}"></p>
-                                </div>
+                            <div class="twelve wide column">
+                                <p th:text="${reservationFlow.reservation.room.roomType}"></p>
                             </div>
-                            <div class="row">
-                                <div class="four wide column">
-                                    <p class="meta-table__header">Per night</p>
-                                </div>
-                                <div class="twelve wide column">
-                                    <p th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></p>
-                                </div>
+                        </div>
+                        <div class="row">
+                            <div class="four wide column">
+                                <p class="meta-table__header">Room Number</p>
+                            </div>
+                            <div class="twelve wide column">
+                                <p th:text="${reservationFlow.reservation.room.roomNumber}"></p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="four wide column">
+                                <p class="meta-table__header"># Beds</p>
+                            </div>
+                            <div class="twelve wide column">
+                                <p th:text="${reservationFlow.reservation.room.beds}"></p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="four wide column">
+                                <p class="meta-table__header">Per night</p>
+                            </div>
+                            <div class="twelve wide column">
+                                <p th:text="${#numbers.formatCurrency(reservationFlow.reservation.room.costPerNight)}"></p>
                             </div>
                         </div>
                     </div>
-
-                    <div th:replace="~{reservation/fragments :: roomCosts}"></div>
                 </div>
-            </div>
 
-            <div class="field">
-                <button class="ui button" type="submit" name="cancel">Cancel</button>
-                <button class="ui button" type="submit">Next</button>
+                <div th:replace="~{reservation/fragments :: roomCosts}"></div>
             </div>
+        </div>
+
+        <div class="field">
+            <button class="ui button" type="submit" name="cancel">Cancel</button>
+            <button class="ui button" type="submit">Next</button>
         </div>
     </form>
 </div>

@@ -1,5 +1,6 @@
-package com.demo.reservation.flow.forms;
+package com.demo.reservation.flow;
 
+import com.demo.reservation.flow.forms.ReservationFlow;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.*;
