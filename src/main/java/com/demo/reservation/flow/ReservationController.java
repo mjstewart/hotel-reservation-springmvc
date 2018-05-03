@@ -7,6 +7,7 @@ import com.demo.persistance.RoomRepository;
 import com.demo.reservation.ExtraRepository;
 import com.demo.reservation.flow.forms.ReservationFlow;
 import com.demo.reservation.testcheckboxes.Drink;
+import com.demo.reservation.testcheckboxes.EnumDrink;
 import com.demo.reservation.testcheckboxes.Person;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -375,7 +376,6 @@ public class ReservationController {
         return "redirect:/reservation/completed";
     }
 
-
     // End flow
 
     @GetMapping("/reservation/completed")
@@ -384,9 +384,18 @@ public class ReservationController {
     }
 
 
+
+
+
+
+
+
+
+
     @GetMapping("/drinks")
     public String getDrinks(Model model) {
-        Person person = new Person(30L);
+        Person person = new Person(30L, "John Smith");
+
         List<Drink> selectableDrinks = Arrays.asList(
                 new Drink(1L, "coke"),
                 new Drink(2L, "fanta"),
@@ -396,9 +405,19 @@ public class ReservationController {
         model.addAttribute("person", person);
         model.addAttribute("selectableDrinks", selectableDrinks);
 
+        return "reservation/drinks";
+    }
+
+    @GetMapping("/drinks2")
+    public String getDrinks2(Model model) {
+        Person person = new Person(30L, "John Smith");
+
+        model.addAttribute("person", person);
+        model.addAttribute("selectableEnumDrinks", EnumDrink.values());
 
         return "reservation/drinks";
     }
+
 
 
     @PostMapping("/drinks")
