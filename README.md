@@ -20,4 +20,6 @@ This project provided the inspiration and use cases to create a thymeleaf extens
 https://github.com/mjstewart/thymeleaf-querystring contains a video tutorial using this project to demonstrate the
 integration with spring data `PagingAndSortingRepository`.
 
- 
+# Install
+
+This project has a dependency on https://github.com/mjstewart/thymeleaf-querystring. This dependency is not currently available on maven central. As per README in https://github.com/mjstewart/thymeleaf-querystring, you can simply download the jar in the root folder and manually add it to this project before running it.
