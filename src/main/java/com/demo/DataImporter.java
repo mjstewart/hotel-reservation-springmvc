@@ -32,7 +32,7 @@ public class DataImporter {
     public CommandLineRunner insertTestData() {
         return args -> {
             // For simplicity every hotel will have the same extras.
-            System.out.println("-------------------CommandLineRunner");
+            System.out.println("-------------------CommandLineRunner, insserting sample data");
             // basic
             extraRepository.save(new Extra("Foxtel", new BigDecimal("1.20"), Extra.Type.Basic, Extra.Category.General));
             extraRepository.save(new Extra("Unlimited Internet", new BigDecimal("2.00"), Extra.Type.Basic, Extra.Category.General));

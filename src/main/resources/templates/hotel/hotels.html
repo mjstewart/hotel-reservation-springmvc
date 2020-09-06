@@ -28,7 +28,7 @@
 
             <tr>
                 <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('name'))}"
-                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+                <!--                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"-->
                     th:classappend="${cssWhenFieldIsAsc.apply('name')}"
                     th:title="${#qs.valueWhenMatchesSortAsc(qstring,
                                  'Sort hotel name A to Z',
@@ -38,7 +38,7 @@
                 </th>
 
                 <th th:with="newUrl=${urlBuilder.apply(fieldSorterDesc.apply('stars'))}"
-                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+<!--                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"-->
                     th:classappend="${cssWhenFieldIsAsc.apply('stars')}"
                     th:title="${#qs.valueWhenMatchesSortDesc(qstring,
                                  'Sort by highest to lowest rating',
@@ -48,7 +48,7 @@
                 </th>
 
                 <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('address.suburb'))}"
-                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+<!--                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"-->
                     th:classappend="${cssWhenFieldIsAsc.apply('address.suburb')}"
                     th:title="${#qs.valueWhenMatchesSortAsc(qstring,
                                  'Sort suburb A to Z',
@@ -58,7 +58,7 @@
                 </th>
 
                 <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('address.state'))}"
-                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+<!--                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"-->
                     th:classappend="${cssWhenFieldIsAsc.apply('address.state')}"
                     th:title="${#qs.valueWhenMatchesSortAsc(qstring,
                                  'Sort suburb A to Z',
@@ -68,7 +68,7 @@
                 </th>
 
                 <th th:with="newUrl=${urlBuilder.apply(fieldSorterAsc.apply('address.postcode'))}"
-                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"
+<!--                    th:onclick="'javascript:onSortChange(\'' + ${newUrl} + '\');'"-->
                     th:classappend="${cssWhenFieldIsAsc.apply('address.postcode')}"
                     th:title="${#qs.valueWhenMatchesSortAsc(qstring,
                                  'Sort postcode lowest to highest',
