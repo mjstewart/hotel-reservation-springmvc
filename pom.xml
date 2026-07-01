@@ -143,6 +143,13 @@
             <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Required to run JUnit 4 tests on JUnit Platform (Spring Boot 2.4+ excludes this by default) -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
