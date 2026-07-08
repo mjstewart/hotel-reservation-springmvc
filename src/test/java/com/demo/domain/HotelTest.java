@@ -11,11 +11,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-/**
- * Testes unitários para {@link Hotel}.
- *
- * Cobre geração de horários de check-in permitidos e relacionamento bidirecional com Room.
- */
 public class HotelTest {
 
     private Hotel createHotel() {
@@ -35,10 +30,6 @@ public class HotelTest {
 
     // ==================== allowableCheckInTimes() ====================
 
-    /**
-     * Deve gerar o range correto de horários permitidos para check-in.
-     * Com horário padrão de 7:00 a 22:00, deve gerar 16 horários (7, 8, ..., 22).
-     */
     @Test
     public void allowableCheckInTimes_DefaultTimes_GeneratesCorrectRange() {
         Hotel hotel = createHotel();
@@ -50,9 +41,7 @@ public class HotelTest {
         assertThat(times.get(times.size() - 1)).isEqualTo(LocalTime.of(22, 0));
     }
 
-    /**
-     * Com range customizado de 9:00 a 12:00, deve gerar 4 horários.
-     */
+
     @Test
     public void allowableCheckInTimes_CustomRange_GeneratesCorrectHours() {
         Hotel hotel = createHotelWithCustomTimes(
@@ -71,9 +60,7 @@ public class HotelTest {
         );
     }
 
-    /**
-     * Quando earliest e latest são o mesmo horário, deve gerar exatamente 1 horário.
-     */
+
     @Test
     public void allowableCheckInTimes_SameTime_ReturnsSingleTime() {
         Hotel hotel = createHotelWithCustomTimes(
@@ -89,9 +76,7 @@ public class HotelTest {
 
     // ==================== addRoom() - Relacionamento bidirecional ====================
 
-    /**
-     * addRoom deve adicionar o quarto ao hotel e configurar o relacionamento bidirecional.
-     */
+
     @Test
     public void addRoom_SetsHotelBidirectional() {
         Hotel hotel = createHotel();
@@ -103,9 +88,7 @@ public class HotelTest {
         assertThat(room.getHotel()).isEqualTo(hotel);
     }
 
-    /**
-     * Múltiplos quartos devem ser adicionados corretamente.
-     */
+
     @Test
     public void addRoom_MultipleRooms_AllAdded() {
         Hotel hotel = createHotel();
@@ -123,9 +106,7 @@ public class HotelTest {
 
     // ==================== equals / hashCode ====================
 
-    /**
-     * Hotéis com mesmo endereço e email devem ser iguais.
-     */
+
     @Test
     public void equals_SameAddressAndEmail_AreEqual() {
         Address address = new Address("Hotel", "1 St", null, State.VIC, "Melbourne", new Postcode("3000"));
@@ -135,9 +116,7 @@ public class HotelTest {
         assertThat(hotel1).isEqualTo(hotel2);
     }
 
-    /**
-     * Hotéis com emails diferentes não devem ser iguais.
-     */
+
     @Test
     public void equals_DifferentEmail_NotEqual() {
         Address address = new Address("Hotel", "1 St", null, State.VIC, "Melbourne", new Postcode("3000"));
@@ -149,9 +128,7 @@ public class HotelTest {
 
     // ==================== Late checkout fee ====================
 
-    /**
-     * A taxa de late checkout padrão deve ser $15.95.
-     */
+
     @Test
     public void defaultLateCheckoutFee() {
         Hotel hotel = createHotel();

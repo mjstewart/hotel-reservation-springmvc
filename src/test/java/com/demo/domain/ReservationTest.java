@@ -25,9 +25,7 @@ public class ReservationTest {
         return room;
     }
 
-    /**
-     * Confirm isRoomFull determines a room is fool when its guest limit is reached.
-     */
+
     @Test
     public void isRoomFull() {
         Room room = createRoom();
@@ -76,9 +74,6 @@ public class ReservationTest {
         assertThat(reservation.hasAtLeastOneAdultGuest()).isTrue();
     }
 
-    /**
-     * You should not be able to add a guest to a room that is already full.
-     */
     @Test
     public void addGuest_OnlyWhenThereAreFreeBeds() {
         Room room = createRoom();
@@ -128,9 +123,7 @@ public class ReservationTest {
         assertThat(reservation.getGuests()).containsExactly(guestB);
     }
 
-    /**
-     * All general extras must be {@code Extra.Category.General}, otherwise an exception is thrown.
-     */
+
     @Test
     public void setGeneralExtras() {
         Reservation reservation = new Reservation();
@@ -141,9 +134,7 @@ public class ReservationTest {
         assertThat(reservation.getGeneralExtras()).isEqualTo(generalExtras);
     }
 
-    /**
-     * When the room is luxury, {@code Extra.Type.Premium} is the type to base food and general extras charging from.
-     */
+
     @Test
     public void getExtraPricingType_LuxuryRoomIsPremium() {
         Reservation reservation = new Reservation();
@@ -155,9 +146,7 @@ public class ReservationTest {
         assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Premium);
     }
 
-    /**
-     * When the room is business, {@code Extra.Type.Premium} is the type to base food and general extras charging from.
-     */
+
     @Test
     public void getExtraPricingType_BusinessRoomIsPremium() {
         Reservation reservation = new Reservation();
@@ -169,9 +158,7 @@ public class ReservationTest {
         assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Premium);
     }
 
-    /**
-     * When the room is Balcony, {@code Extra.Type.Basic} is the type to base food and general extras charging from.
-     */
+
     @Test
     public void getExtraPricingType_BalconyRoomIsBasic() {
         Reservation reservation = new Reservation();
@@ -183,9 +170,6 @@ public class ReservationTest {
         assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Basic);
     }
 
-    /**
-     * When the room is Economy, {@code Extra.Type.Basic} is the type to base food and general extras charging from.
-     */
     @Test
     public void getExtraPricingType_EconomyRoomIsBasic() {
         Reservation reservation = new Reservation();
@@ -197,9 +181,7 @@ public class ReservationTest {
         assertThat(reservation.getExtraPricingType()).isEqualTo(Extra.Type.Basic);
     }
 
-    /**
-     * If general extras contains a {@code Extra.Category.Food} an exception is thrown.
-     */
+
     @Test(expected = IllegalArgumentException.class)
     public void setGeneralExtras_ThrowsException_WhenInvalidExtras() {
         Reservation reservation = new Reservation();
@@ -209,9 +191,7 @@ public class ReservationTest {
         assertThat(reservation.getGeneralExtras()).isNull();
     }
 
-    /**
-     * When a customer chooses the late checkout option, the late fee should be returned.
-     */
+
     @Test
     public void getChargeableLateCheckoutFee_WhenLateCheckout_ChargeFee() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -227,9 +207,7 @@ public class ReservationTest {
         assertThat(reservation.getChargeableLateCheckoutFee()).isEqualTo(lateCheckoutFee);
     }
 
-    /**
-     * When a customer does not select late checkout, the chargeable late fee is $0.00.
-     */
+
     @Test
     public void getChargeableLateCheckoutFee_WhenNoLateCheckout_NoCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -245,10 +223,7 @@ public class ReservationTest {
         assertThat(reservation.getChargeableLateCheckoutFee()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * When a customer selects late checkout but have a {@code RoomType.Luxury} room, the late checkout fee is waived and
-     * should return $0.00.
-     */
+
     @Test
     public void getLateCheckoutFee_WhenLuxuryRoomType_NoLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -264,10 +239,6 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * When a customer selects late checkout but have a {@code RoomType.Business}, the late checkout fee is waived and
-     * should return $0.00.
-     */
     @Test
     public void getLateCheckoutFee_WhenBusinessRoomType_NoLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -283,9 +254,7 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * When a customer selects late checkout but have a {@code RoomType.Economy}, the late checkout fee is applied.
-     */
+
     @Test
     public void getLateCheckoutFee_WhenEconomyRoomType_ApplyLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -301,9 +270,7 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(lateCheckoutFee);
     }
 
-    /**
-     * When a customer selects late checkout but have a {@code RoomType.Balcony}, the late checkout fee is applied.
-     */
+
     @Test
     public void getLateCheckoutFee_WhenBalconyRoomType_ApplyLateCharge() {
         BigDecimal lateCheckoutFee = BigDecimal.valueOf(20.50);
@@ -319,11 +286,6 @@ public class ReservationTest {
         assertThat(reservation.getLateCheckoutFee()).isEqualTo(lateCheckoutFee);
     }
 
-    /**
-     * If the reservation was for 0 nights, the cost should be 0.
-     * Technically this won't occur since the business rule of at least 1 night is validated, however is
-     * tested as a sanity check to ensure room cost is being calculated correctly.
-     */
     @Test
     public void getTotalRoomCost_ZeroNights_NoCost() {
         Room room = createRoom();
@@ -342,9 +304,7 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCost()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * A room with an active late fee should not be considered in the total room cost calculation.
-     */
+
     @Test
     public void getTotalRoomCost_CalculatesCorrectCost() {
         Room room = createRoom();
@@ -366,10 +326,7 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCost()).isEqualTo(expectedCost);
     }
 
-    /**
-     * When the late checkout is NOT enabled and the room type does not waive the late checkout fee,
-     * the late checkout fee should NOT be included in the total room cost.
-     */
+
     @Test
     public void getTotalRoomCostWithLateCheckoutFee_NoCheckoutFee_RoomCostOnly() {
         Room room = createRoom();
@@ -392,10 +349,7 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCostWithLateCheckoutFee()).isEqualTo(expectedCost);
     }
 
-    /**
-     * When the late checkout is enabled and the room type does not waive the late checkout fee,
-     * the late checkout fee should be included in the total room cost.
-     */
+
     @Test
     public void getTotalRoomCostWithLateCheckoutFee_WithLateCheckoutFee_CorrectCost() {
         Room room = createRoom();
@@ -419,9 +373,7 @@ public class ReservationTest {
         assertThat(reservation.getTotalRoomCostWithLateCheckoutFee()).isEqualTo(expectedCost);
     }
 
-    /**
-     * When there are no general extras, the cost should be zero.
-     */
+
     @Test
     public void getTotalGeneralExtrasCost_NoExtras() {
         Set<Extra> extras = Set.of();
@@ -434,10 +386,7 @@ public class ReservationTest {
         assertThat(reservation.getTotalGeneralExtrasCost()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * When there are general extras, the total cost should be equal to the sum of each extra multiplied by
-     * the total night stay.
-     */
+
     @Test
     public void getTotalGeneralExtrasCost() {
         BigDecimal nights = BigDecimal.valueOf(3);
@@ -461,19 +410,14 @@ public class ReservationTest {
         assertThat(reservation.getTotalGeneralExtrasCost()).isEqualTo(expectedSum);
     }
 
-    /**
-     * When there are no meal plans, the cost should be zero.
-     */
+
     @Test
     public void getTotalMealPlansCost_NoMealPlans() {
         Reservation reservation = new Reservation();
         assertThat(reservation.getTotalMealPlansCost()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * When there are many meal plans, the total cost of all meal plans should be the sum of each individual meal plan
-     * per guest.
-     */
+
     @Test
     public void getTotalMealPlansCost() {
         Reservation reservation = new Reservation();
@@ -513,9 +457,7 @@ public class ReservationTest {
         assertThat(reservation.getTotalMealPlansCost()).isEqualTo(expectedCost);
     }
 
-    /**
-     * Ensure that the total cost is calculated by including all the correct sub totals.
-     */
+
     @Test
     public void getTotalCostExcludingTax() {
         Reservation reservation = mock(Reservation.class);
@@ -537,9 +479,6 @@ public class ReservationTest {
         verify(reservation, times(1)).getTotalMealPlansCost();
     }
 
-    /**
-     * Make sure that the correct tax is calculated from the total cost excluding tax.
-     */
     @Test
     public void getTaxableAmount() {
         Reservation reservation = mock(Reservation.class);
@@ -582,10 +521,6 @@ public class ReservationTest {
     }
 
 
-    /**
-     * Reservation.mealPlans should contain a list of {@code MealPlan}s created for each {@code Guest}.
-     * In this test when there are no guests there should be no meal plans created.
-     */
     @Test
     public void createMealPlans_NoGuestsExists_EmptyMealPlans() {
         Reservation reservation = new Reservation();
@@ -597,10 +532,6 @@ public class ReservationTest {
         assertThat(reservation.getMealPlans()).isEmpty();
     }
 
-    /**
-     * Reservation.mealPlans should contain a list of {@code MealPlan}s created for each {@code Guest}
-     * which are ordered by the rules in {@code Guest.comparator} for display in thymeleaf template.
-     */
     @Test
     public void createMealPlans_GuestsExists_MealPlansInCorrectOrder() {
         Reservation reservation = new Reservation();
@@ -631,10 +562,7 @@ public class ReservationTest {
                 .containsExactly(guestC, guestB, guestD, guestA);
     }
 
-    /**
-     * When each guest has a meal plan but no food extras are added, this should be treated as the meal
-     * plans being empty which is useful to not display meal sub totals on UI if there is nothing selected.
-     */
+
     @Test
     public void hasEmptyMealPlans_MealPlansWithNoFoodSumToZero() {
         Reservation reservation = new Reservation();

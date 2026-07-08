@@ -55,10 +55,6 @@ public class PaymentFlowTest {
 
     // Flow step 6 - payment
 
-    /**
-     * Assert that the Model contains a {@code PendingPayment} object ready to bind to the payment form.
-     * The reservationFlow must still exist to ensure the Reservation is not lost.
-     */
     @Test
     public void getPayment_HasValidStartingState() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -72,10 +68,7 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Redirects to review form when in the payment form. Note the flash attributes
-     * used are so the Model is not lost between redirects.
-     */
+
     @Test
     public void fromPaymentBackToReview() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -89,9 +82,7 @@ public class PaymentFlowTest {
                 .andExpect(flash().attributeExists("reservationFlow"));
     }
 
-    /**
-     * SessionStatus should be set to complete but not sure how to test this.
-     */
+
     @Test
     public void cancelPayment_RedirectToHome() throws Exception {
         mockMvc.perform(post("/reservation/payment")
@@ -100,12 +91,6 @@ public class PaymentFlowTest {
 
     }
 
-    /**
-     * When posting an empty form, assert all expected bean validation errors occur.
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_EmptyForm_ExpectAllBeanValidationErrors() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -127,15 +112,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid credit card type. All fields valid except for card type
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_creditCardType() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -158,15 +134,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid cardHolderName is not empty. All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_cardHolderName() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -189,15 +156,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid creditCardNumber has letters. All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_creditCardNumber_HasLetter() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -220,15 +178,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid creditCardNumber - not 10 digits. All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_creditCardNumber_NotTenDigits() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -251,15 +200,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid cvv - has letter. All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_cvv_HasLetter() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -282,15 +222,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid cvv - has letter. All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_cvv_NotThreeDigits() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -313,15 +244,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid cardExpiryYear. All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_cardExpiryYear_NotFourDigits() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -344,16 +266,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * Check for invalid cardExpiryMonth. Must be the same as {@code Month} constants such as {@code Month.JULY}.
-     * All fields valid except for cardHolderName
-     * <p>
-     * Fill the form with values that trigger the error conditions and assert the expected bean validations occurs
-     * <p>
-     * Important, the createdTime must always be included since this field is always provided (its
-     * a hidden field in the form). Without this the credit card expiration fields cant be calculated
-     * since there is no base date.
-     */
     @Test
     public void postPayment_ValidationErrors_cardExpiryMonth_InvalidTypeFormat() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -376,10 +288,6 @@ public class PaymentFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Payment));
     }
 
-    /**
-     * All fields are valid. The {@code Reservation} should be saved to database and session state
-     * cleared.
-     */
     @Test
     public void postPayment_Valid() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();

@@ -16,21 +16,6 @@ public class GlobalErrorMatchers {
         return new GlobalErrorMatchers();
     }
 
-    /**
-     * Usage
-     * <p>
-     * <p>Assumes a domain object {@code Guest} is bound to the {@code BindingResult}. This results in
-     * {@code bindingResult.reject} registering a global error on the {@code Guest} with the error code 'exists'.
-     *
-     * <pre>
-     *     bindingResult.reject("exists", "A guest with this name already exists");
-     *
-     *     globalErrorMatchers().hasGlobalErrorCode("guest", "exists")
-     * </pre>
-     *
-     * @param object The name of the target object the global error was created for.
-     * @param code The error code.
-     */
     public ResultMatcher hasGlobalErrorCode(final String object, final String code) {
         return mvcResult -> {
             ModelAndView mav = getModelAndView(mvcResult);

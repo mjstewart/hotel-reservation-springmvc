@@ -48,9 +48,6 @@ public class HotelSearchControllerTest {
     @MockBean
     private RoomRepository roomRepository;
 
-    /**
-     * No search results should be returned when no location query parameters are provided.
-     */
     @Test
     public void getHotels_NoLocationQueryParams_ReturnsEmptyPageResults() throws Exception {
         FeatureMatcher<Page<Hotel>, Long> hasExpectedPageResult =
@@ -65,9 +62,7 @@ public class HotelSearchControllerTest {
                 .findAllByLocation(isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
-    /**
-     * When the query string contains a valid location but no hotels are found, the result should contain 0 hotels.
-     */
+
     @Test
     public void getHotels_NoHotelsFound_AddsResultsToModel() throws Exception {
         List<Hotel> hotels = List.of();
@@ -90,9 +85,7 @@ public class HotelSearchControllerTest {
                 .findAllByLocation(eq("WA"), isNull(), eq("4000"), any(Pageable.class));
     }
 
-    /**
-     * When the query string contains a valid location, it should return the matching hotels.
-     */
+
     @Test
     public void getHotels_HotelsFound_AddsResultsToModel() throws Exception {
         Hotel hotel = new Hotel("Hotel Royal", new Address("Hotel Royal", "33 kent street", null,
@@ -118,9 +111,6 @@ public class HotelSearchControllerTest {
                 .findAllByLocation(eq("VIC"), isNull(), isNull(), any(Pageable.class));
     }
 
-    /**
-     * 400 bad request when the hotel id is non numeric.
-     */
     @Test
     public void getAvailableHotelRooms_InvalidHotelId_BadRequest() throws Exception {
         mockMvc.perform(get("/hotel/abc/rooms"))
@@ -134,9 +124,7 @@ public class HotelSearchControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    /**
-     * Note: The model must contain the hotel so the UI can display detailed information.
-     */
+
     @Test
     public void getAvailableHotelRooms_HotelHasAvailableRooms() throws Exception {
         FeatureMatcher<Page<Hotel>, Long> hasExpectedPageResult =

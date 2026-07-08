@@ -11,9 +11,7 @@ import static org.assertj.core.api.Assertions.*;
 
 public class MealPlanTest {
 
-    /**
-     * A {@code MealPlan} can be created with no food extras.
-     */
+
     @Test
     public void createMealPlan_LegalMealPlanWithNoMeals() {
         Guest guest = new Guest("john", "smith", false);
@@ -27,10 +25,7 @@ public class MealPlanTest {
         assertThat(mealPlan.getFoodExtras()).isEmpty();
     }
 
-    /**
-     * Cannot construct a {@code MealPlan} if the list of {@code Extra}s contains anything other than
-     * {@code Extra.Category.Food}.
-     */
+
     @Test
     public void createMealPlan_IllegalFoodExtras() {
         Guest guest = new Guest("john", "smith", false);
@@ -48,10 +43,7 @@ public class MealPlanTest {
                 .isThrownBy(() -> new MealPlan(guest, reservation, illegalFoodExtras, List.of()));
     }
 
-    /**
-     * A {@code MealPlan} is constructed only when the list of {@code Extra}s contains all
-     * elements of type {@code Extra.Category.Food}.
-     */
+
     @Test
     public void createMealPlan_LegalFoodExtras() {
         Guest guest = new Guest("john", "smith", false);
@@ -70,10 +62,6 @@ public class MealPlanTest {
         assertThat(mealPlan.getFoodExtras()).isEqualTo(legalFoodExtras);
     }
 
-    /**
-     * Cannot set the food extras list within {@code MealPlan} if the list of {@code Extra}s contains anything
-     * other than {@code Extra.Category.Food}.
-     */
     @Test
     public void createMealPlan_SetIllegalFoodExtras() {
         Guest guest = new Guest("john", "smith", false);
@@ -91,10 +79,7 @@ public class MealPlanTest {
                 .isThrownBy(() -> new MealPlan(guest, reservation, List.of(), List.of()).setFoodExtras(illegalFoodExtras));
     }
 
-    /**
-     * A {@code MealPlan} sets the food extras only when the list of {@code Extra}s contains all
-     * elements of type {@code Extra.Category.Food}.
-     */
+
     @Test
     public void createMealPlan_SetLegalFoodExtras() {
         Guest guest = new Guest("john", "smith", false);
@@ -113,9 +98,6 @@ public class MealPlanTest {
         assertThat(mealPlan.getFoodExtras()).isEqualTo(legalFoodExtras);
     }
 
-    /**
-     * A meal plan with no food is $0
-     */
     @Test
     public void getTotalMealPlanCost_NoFood() {
         Guest guest = new Guest("john", "smith", false);
@@ -129,9 +111,7 @@ public class MealPlanTest {
         assertThat(mealPlan.getTotalMealPlanCost()).isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * Adults should not receive any discount
-     */
+
     @Test
     public void getTotalMealPlanCost_NoAdultDiscount() {
         Guest guest = new Guest("john", "smith", false);
@@ -159,9 +139,6 @@ public class MealPlanTest {
         assertThat(mealPlan.getTotalMealPlanCost()).isEqualTo(foodExtrasTotal);
     }
 
-    /**
-     * The child discount gets applied to each food extra then added together.
-     */
     @Test
     public void getTotalMealPlanCost_ChildDiscountApplied() {
         Guest guest = new Guest("john", "smith", true);
@@ -261,9 +238,7 @@ public class MealPlanTest {
         assertThat(mealPlan.calculateExtraCost(extra)).isEqualTo(expectedTotal);
     }
 
-    /**
-     * It should be an error if a guest is both vegan and vegetarian, its either one or the other not both.
-     */
+ 
     @Test
     public void hasInvalidDietaryRequirements_InvalidVeganAndVegetarian() {
         Guest guest = new Guest("john", "smith", true);
@@ -284,9 +259,7 @@ public class MealPlanTest {
         assertThat(mealPlan.hasInvalidDietaryRequirements()).isTrue();
     }
 
-    /**
-     * Vegan and Vegetarian don't exist together which is valid.
-     */
+
     @Test
     public void hasInvalidDietaryRequirements_Valid() {
         Guest guest = new Guest("john", "smith", true);

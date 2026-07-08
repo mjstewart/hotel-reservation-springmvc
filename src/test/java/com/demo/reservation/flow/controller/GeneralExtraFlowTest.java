@@ -45,11 +45,6 @@ public class GeneralExtraFlowTest {
 
     // Flow step 3 - extras
 
-    /**
-     * Assert that the Model contains the expected general extras fetched from repository and it
-     * contains the reservationFlow from the session. Also ensure the reservationFlow step is on
-     * Extras.
-     */
     @Test
     public void getGeneralExtrasForm_HasValidStartingState() throws Exception {
         ReservationFlow reservationFlow = FlowStages.guestCompletedFlow();
@@ -73,10 +68,7 @@ public class GeneralExtraFlowTest {
         verifyNoMoreInteractions(extraRepository);
     }
 
-    /**
-     * Going back requires the model be transferred into flash attributes otherwise it will be lost
-     * during the redirect.
-     */
+
     @Test
     public void fromGeneralExtrasBackToGuests_RedirectsCorrectView() throws Exception {
         ReservationFlow reservationFlow = FlowStages.guestCompletedFlow();
@@ -88,15 +80,7 @@ public class GeneralExtraFlowTest {
                 .andExpect(flash().attributeExists("reservationFlow"));
     }
 
-    /**
-     * When the selected general extras are submitted, check the flow step is completed for Extras and
-     * we redirect to the next meal view. flash attributes are needed so the Model state is not lost
-     * across the redirect.
-     * <p>
-     * We cant test for checking extras are added to the reservation since all of that happens
-     * using spring binding infrastructure so would need to make an integration test for that using
-     * {@literal @SpringBootTest}.
-     */
+
     @Test
     public void submitGeneralExtras_RedirectsToCorrectViewAndStep() throws Exception {
         ReservationFlow reservationFlow = FlowStages.guestCompletedFlow();

@@ -41,10 +41,6 @@ public class ReviewFlowTest {
 
     // Flow step 5 - review
 
-    /**
-     * Getting the review form only requires the reservationFlow in the model as the contained
-     * Reservation is now in its final state before payment.
-     */
     @Test
     public void getReview_HasValidStartingState() throws Exception {
         ReservationFlow reservationFlow = FlowStages.mealsCompletedFlow();
@@ -57,10 +53,7 @@ public class ReviewFlowTest {
                 .andExpect(FlowMatchers.modelHasIncompleteFlowStep(ReservationFlow.Step.Review));
     }
 
-    /**
-     * Going back requires the model be transferred into flash attributes otherwise it will be lost
-     * during the redirect.
-     */
+
     @Test
     public void fromReviewBackToMealPlans_RedirectsCorrectView() throws Exception {
         ReservationFlow reservationFlow = FlowStages.mealsCompletedFlow();
@@ -74,10 +67,6 @@ public class ReviewFlowTest {
                 .andExpect(flash().attributeExists("reservationFlow"));
     }
 
-    /**
-     * Posting the review simply means user is happy and doesn't need to go back and edit so lets
-     * go to the payment page.
-     */
     @Test
     public void postReview() throws Exception {
         ReservationFlow reservationFlow = FlowStages.mealsCompletedFlow();

@@ -5,12 +5,7 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Objects;
 
-/**
- * A {@code Reservation} can contain extras which contribute to the total reservation price.
- *
- * <p>The {@code Category} allows the {@code Extra} concept to be used for general extras such as foxtel and food which
- * get added to meal plans.</p>
- */
+
 @Entity
 public class Extra {
     @Id

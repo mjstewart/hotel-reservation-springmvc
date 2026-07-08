@@ -52,16 +52,7 @@ public class DateFlowTest {
     @MockBean
     private TimeProvider timeProvider;
 
-    /**
-     * Creates form params to simulate POST.
-     * <p>
-     * <p>{@code reservation.dates.checkInDate} is the path spring uses to bind request param to model. For example,
-     * {@code ReservationController.dates} has the {@code ModelAttribute} of {@code ReservationFlow} which will contain
-     * the form body.</p>
-     * <p>
-     * <p>Using {@code ReservationFlow} as the root object containing the form fields, spring will use reflection to
-     * instantiate a {@code ReservationDates} by using the navigation path of {@code reservation.dates.checkInDate} etc.</p>
-     */
+
     public static LinkedMultiValueMap<String, String> toReservationDatesParams(ReservationDates dates) {
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.put("reservation.dates.checkInDate", List.of(dates.getCheckInDate().format(DateTimeFormatter.ISO_DATE)));
@@ -72,9 +63,7 @@ public class DateFlowTest {
         return params;
     }
 
-    /**
-     * Check in date is the in the past
-     */
+
     public static LinkedMultiValueMap<String, String> checkInNotInFutureParams(TimeProvider timeProvider) {
         LocalDate checkIn = timeProvider.localDate().minusDays(1);
         LocalDate checkOut = checkIn.plusDays(1);
@@ -84,9 +73,7 @@ public class DateFlowTest {
         return toReservationDatesParams(dates);
     }
 
-    /**
-     * Total night stay is 0 which handles check in/out dates being the same.
-     */
+
     public static LinkedMultiValueMap<String, String> minimumNightsParams(TimeProvider timeProvider) {
         LocalDate checkIn = timeProvider.localDate();
         LocalTime estimatedCheckInTime = LocalTime.of(10, 0);
@@ -95,9 +82,7 @@ public class DateFlowTest {
         return toReservationDatesParams(dates);
     }
 
-    /**
-     * Checkout date is before the check in
-     */
+
     public static LinkedMultiValueMap<String, String> checkOutOccursBeforeCheckInParams(TimeProvider timeProvider) {
         LocalDate checkIn = timeProvider.localDate();
         LocalDate checkOut = checkIn.minusDays(1);
@@ -147,10 +132,7 @@ public class DateFlowTest {
                 .andExpect(status().isNotFound());
     }
 
-    /**
-     * Given the room is found, its expected the Dates step is active but still incomplete which
-     * should be set by default when {@code ReservationFlow} is instantiated.
-     */
+
     @Test
     public void getDateForm_RetrievesRoomById() throws Exception {
         Room room = FlowStages.createRoom();
@@ -174,14 +156,7 @@ public class DateFlowTest {
                 .andExpect(view().name("reservation/dates"));
     }
 
-    /**
-     * Assert that the {@code ReservationFlow} is in the model with the correct state.
-     *
-     * <ul>
-     * <li>The room must be set since the {@code Reservation} performs many calculations which depend on a {@code Room}.</li>
-     * <li>dates must not null given the date form will be bound to this object.</li>
-     * </ul>
-     */
+
     @Test
     public void getDateForm_HasValidModel() throws Exception {
         Room room = FlowStages.createRoom();
@@ -198,11 +173,7 @@ public class DateFlowTest {
                         ))));
     }
 
-    // Flow step 1 - POST date form
 
-    /**
-     * SessionStatus should be set to complete but not sure how to test this.
-     */
     @Test
     public void postDateForm_Cancel_RedirectHome() throws Exception {
         mockMvc.perform(post("/reservation/dates")
@@ -301,10 +272,7 @@ public class DateFlowTest {
         ;
     }
 
-    /**
-     * Note the flash attributes are being used since we are redirecting. flash is used otherwise Model attributes
-     * wont survive the redirect. ReservationFlow.Step.Dates should now be completed.
-     */
+
     @Test
     public void postDateForm_Valid_RedirectToNextView() throws Exception {
         ReservationFlow reservationFlow = pendingDateFlow();

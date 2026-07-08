@@ -12,9 +12,7 @@ import static org.assertj.core.api.Assertions.*;
 
 public class PendingPaymentTest {
 
-    /**
-     * Should return the next 10 years starting from now.
-     */
+
     @Test
     public void validExpiryYears() {
         LocalDateTime now = LocalDateTime.of(2010, 1, 1, 9, 0);
@@ -36,9 +34,7 @@ public class PendingPaymentTest {
         assertThat(pendingPayment.validExpiryYears()).containsExactlyElementsOf(expected);
     }
 
-    /**
-     * Should return only the next months from now (January) until December to create the full year.
-     */
+
     @Test
     public void validExpiryMonths_CreateFullYear() {
         LocalDateTime now = LocalDateTime.of(2010, 1, 1, 9, 0);
@@ -61,9 +57,7 @@ public class PendingPaymentTest {
         assertThat(pendingPayment.validExpiryMonths()).containsExactlyElementsOf(expected);
     }
 
-    /**
-     * Should return only the next months from now (October) until December to create a partial year.
-     */
+
     @Test
     public void validExpiryMonths_CreatePartialYear() {
         LocalDateTime now = LocalDateTime.of(2010, 10, 1, 9, 0);
@@ -77,9 +71,7 @@ public class PendingPaymentTest {
         assertThat(pendingPayment.validExpiryMonths()).containsExactlyElementsOf(expected);
     }
 
-    /**
-     * If its the last month of the year, December should still be returned.
-     */
+
     @Test
     public void validExpiryMonths_LastMonthInYear_ReturnsDecemberOnly() {
         LocalDateTime now = LocalDateTime.of(2010, 12, 1, 9, 0);

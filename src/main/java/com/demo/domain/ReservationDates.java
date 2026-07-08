@@ -72,9 +72,6 @@ public class ReservationDates {
         this.estimatedCheckInTime = estimatedCheckInTime;
     }
 
-    /**
-     * @return {@code true} if the late checkout option is selected
-     */
     public boolean isLateCheckout() {
         return lateCheckout;
     }
@@ -83,9 +80,7 @@ public class ReservationDates {
         this.lateCheckout = lateCheckout;
     }
 
-    /**
-     * @return {@code true} if check out terms and conditions have been accepted.
-     */
+
     public boolean isPolicyAcknowledged() {
         return policyAcknowledged;
     }

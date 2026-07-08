@@ -13,16 +13,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 
-/**
- * Testes de integração para o cálculo de custo completo de uma reserva.
- *
- * Estes testes integram múltiplas classes de domínio (Reservation, Room, Hotel, Extra, MealPlan, Guest)
- * para validar que o cálculo end-to-end do custo total funciona corretamente quando todas as
- * regras de negócio são aplicadas conjuntamente.
- *
- * Diferente dos testes unitários (que usam mocks), estes testes exercitam os objetos reais
- * e suas interações.
- */
 public class ReservationCostIntegrationTest {
 
     // ==================== Helpers ====================

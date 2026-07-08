@@ -9,11 +9,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.*;
 
-/**
- * Testes unitários para {@link Room}.
- *
- * Cobre o relacionamento bidirecional com Reservation e o método isReserved().
- */
+
 public class RoomTest {
 
     private Room createRoom() {
@@ -22,11 +18,7 @@ public class RoomTest {
 
     // ==================== setReservation() - Relacionamento bidirecional ====================
 
-    /**
-     * setReservation deve configurar o relacionamento bidirecional:
-     * - Room.reservation aponta para a Reservation
-     * - Reservation.room aponta de volta para o Room
-     */
+
     @Test
     public void setReservation_SetsBidirectionalRelationship() {
         Room room = createRoom();
@@ -38,9 +30,7 @@ public class RoomTest {
         assertThat(reservation.getRoom()).isEqualTo(room);
     }
 
-    /**
-     * setReservation com null não deve alterar o estado do Room.
-     */
+
     @Test
     public void setReservation_Null_DoesNotSetReservation() {
         Room room = createRoom();
@@ -52,9 +42,7 @@ public class RoomTest {
 
     // ==================== isReserved() ====================
 
-    /**
-     * Um quarto com uma reserva deve retornar true para isReserved().
-     */
+
     @Test
     public void isReserved_WithReservation_ReturnsTrue() {
         Room room = createRoom();
@@ -63,9 +51,7 @@ public class RoomTest {
         assertThat(room.isReserved()).isTrue();
     }
 
-    /**
-     * Um quarto sem reserva deve retornar false para isReserved().
-     */
+ 
     @Test
     public void isReserved_WithoutReservation_ReturnsFalse() {
         Room room = createRoom();
@@ -75,9 +61,7 @@ public class RoomTest {
 
     // ==================== equals / hashCode ====================
 
-    /**
-     * Dois quartos com o mesmo roomNumber devem ser iguais (Natural ID).
-     */
+
     @Test
     public void equals_SameRoomNumber_AreEqual() {
         Room room1 = new Room("R101", RoomType.Economy, 2, BigDecimal.valueOf(50.00));
@@ -87,9 +71,7 @@ public class RoomTest {
         assertThat(room1.hashCode()).isEqualTo(room2.hashCode());
     }
 
-    /**
-     * Quartos com roomNumbers diferentes não devem ser iguais.
-     */
+
     @Test
     public void equals_DifferentRoomNumber_NotEqual() {
         Room room1 = new Room("R101", RoomType.Economy, 2, BigDecimal.valueOf(50.00));
@@ -100,9 +82,7 @@ public class RoomTest {
 
     // ==================== Getters / Setters básicos ====================
 
-    /**
-     * Verifica que o hotel é corretamente associado ao quarto via setHotel.
-     */
+
     @Test
     public void setHotel_AssociatesHotelCorrectly() {
         Room room = createRoom();
@@ -114,9 +94,7 @@ public class RoomTest {
         assertThat(room.getHotel()).isEqualTo(hotel);
     }
 
-    /**
-     * Verifica os getters do Room.
-     */
+
     @Test
     public void constructorAndGetters_SetFieldsCorrectly() {
         Room room = new Room("SUITE-A", RoomType.Luxury, 4, BigDecimal.valueOf(199.99));

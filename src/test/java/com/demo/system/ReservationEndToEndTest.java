@@ -42,15 +42,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Testes de sistema (end-to-end) para o fluxo completo de reserva.
- *
- * Estes testes simulam a jornada completa do usuário através de todos os 6 passos
- * do wizard de reserva: Dates → Guests → Extras → Meals → Review → Payment.
- *
- * Utiliza MockMvc com @WebMvcTest para testar o fluxo completo do controller,
- * verificando redirecionamentos, validações e estados do flow em cada etapa.
- */
 @RunWith(SpringRunner.class)
 @WebMvcTest(ReservationController.class)
 @Import(TestContextConfiguration.class)
@@ -85,21 +76,6 @@ public class ReservationEndToEndTest {
 
     // ==================== Fluxo completo com sucesso ====================
 
-    /**
-     * Teste end-to-end que percorre todos os 6 passos do wizard de reserva com dados válidos.
-     *
-     * Fluxo:
-     * 1. GET /reservation?roomId=1 → Inicia o flow, retorna formulário de datas
-     * 2. POST /reservation/dates → Datas válidas, redireciona para guests
-     * 3. POST /reservation/guests?addGuest → Adiciona um hóspede adulto
-     * 4. POST /reservation/guests → Confirma hóspedes, redireciona para extras
-     * 5. POST /reservation/extras → Confirma extras, redireciona para meals
-     * 6. POST /reservation/meals → Confirma meals, redireciona para review
-     * 7. POST /reservation/review → Confirma review, redireciona para payment
-     * 8. POST /reservation/payment → Pagamento válido, redireciona para completed
-     *
-     * Verifica que o Room é salvo ao final (roomRepository.save chamado).
-     */
     @Test
     public void completeReservationFlow_ValidData_CompletesSuccessfully() throws Exception {
         Room room = FlowStages.createRoom();
@@ -195,10 +171,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Fluxo interrompido no Step 1 (datas inválidas) ====================
 
-    /**
-     * Quando datas inválidas são submetidas (check-in no passado), o fluxo deve parar
-     * no Step 1 e retornar o formulário de datas com erro.
-     */
+
     @Test
     public void completeReservationFlow_InvalidDates_StopsAtStep1() throws Exception {
         when(timeProvider.localDate()).thenReturn(LocalDate.now());
@@ -230,10 +203,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Fluxo interrompido no Step 2 (sem adulto) ====================
 
-    /**
-     * Quando apenas crianças são adicionadas como hóspedes (sem adulto),
-     * o fluxo deve parar no Step 2 com erro de validação.
-     */
+
     @Test
     public void completeReservationFlow_NoAdultGuest_StopsAtStep2() throws Exception {
         ReservationFlow reservationFlow = FlowStages.dateCompletedFlow();
@@ -252,10 +222,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Fluxo interrompido no Step 2 (sem hóspedes) ====================
 
-    /**
-     * Quando não há nenhum hóspede adicionado, o fluxo deve parar no Step 2
-     * com erro informando que deve haver ao menos 1 hóspede.
-     */
+
     @Test
     public void completeReservationFlow_NoGuests_StopsAtStep2() throws Exception {
         ReservationFlow reservationFlow = FlowStages.dateCompletedFlow();
@@ -271,10 +238,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Fluxo interrompido no Step 6 (pagamento inválido) ====================
 
-    /**
-     * Quando dados de pagamento inválidos são submetidos (formulário vazio),
-     * o fluxo deve parar no Step 6 com erros de validação do bean.
-     */
+
     @Test
     public void completeReservationFlow_InvalidPayment_StopsAtStep6() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -296,9 +260,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Navegação: Voltar do pagamento para review ====================
 
-    /**
-     * Verifica que o botão "voltar" no Step 6 (Payment) redireciona para o Step 5 (Review).
-     */
+
     @Test
     public void navigationBack_FromPaymentToReview() throws Exception {
         ReservationFlow reservationFlow = FlowStages.reviewCompletedFlow();
@@ -313,10 +275,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Navegação: Cancelar no pagamento ====================
 
-    /**
-     * Verifica que o botão "cancelar" no Step 6 (Payment) redireciona para a home
-     * e limpa a sessão.
-     */
+
     @Test
     public void navigationCancel_FromPayment_RedirectsHome() throws Exception {
         mockMvc.perform(post("/reservation/payment")
@@ -327,9 +286,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Hóspede duplicado ====================
 
-    /**
-     * Verifica que adicionar um hóspede com o mesmo nome resulta em erro.
-     */
+
     @Test
     public void addDuplicateGuest_ReturnsError() throws Exception {
         ReservationFlow reservationFlow = FlowStages.dateCompletedFlow();
@@ -349,9 +306,6 @@ public class ReservationEndToEndTest {
 
     // ==================== Quarto lotado ====================
 
-    /**
-     * Verifica que tentar adicionar um hóspede quando o quarto está cheio resulta em erro.
-     */
     @Test
     public void addGuest_RoomFull_ReturnsError() throws Exception {
         ReservationFlow reservationFlow = FlowStages.dateCompletedFlow();
@@ -374,9 +328,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Room não encontrado ====================
 
-    /**
-     * Verifica que tentar iniciar uma reserva com um roomId inexistente retorna 404.
-     */
+
     @Test
     public void startReservation_RoomNotFound_Returns404() throws Exception {
         when(roomRepository.findById(anyLong())).thenReturn(Optional.empty());
@@ -387,9 +339,7 @@ public class ReservationEndToEndTest {
 
     // ==================== Completed page ====================
 
-    /**
-     * Verifica que a página de conclusão é acessível.
-     */
+
     @Test
     public void getCompletedPage_ReturnsCorrectView() throws Exception {
         mockMvc.perform(get("/reservation/completed"))

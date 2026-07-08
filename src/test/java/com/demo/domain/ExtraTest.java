@@ -10,9 +10,7 @@ import static org.assertj.core.api.Assertions.*;
 
 public class ExtraTest {
 
-    /**
-     * The total cost of an {@code Extra} is {@code perNightPrice * getTotalNights}
-     */
+ 
     @Test
     public void getTotalPrice() {
         BigDecimal perNightPrice = BigDecimal.valueOf(5.53);

@@ -44,9 +44,6 @@ public class Guest {
         return firstName;
     }
 
-    /**
-     * Converts to lowercase for consistent equality checks
-     */
     public void setFirstName(String firstName) {
         this.firstName = firstName.toLowerCase();
     }
@@ -55,9 +52,7 @@ public class Guest {
         return lastName;
     }
 
-    /**
-     * Converts to lowercase for consistent equality checks
-     */
+ 
     public void setLastName(String lastName) {
         this.lastName = lastName.toLowerCase();
     }
@@ -78,18 +73,14 @@ public class Guest {
         return tempId;
     }
 
-    /**
-     * @return A {@code Comparator} that orders adults first then by firstName then lastName.
-     */
+
     public static Comparator<Guest> comparator() {
         return Comparator.comparing(Guest::isChild, Boolean::compareTo)
                 .thenComparing(Guest::getFirstName)
                 .thenComparing(Guest::getLastName);
     }
 
-    /**
-     * Cant use a UUID because that does not prevent a guest with the same name being added.
-     */
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

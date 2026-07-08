@@ -31,9 +31,6 @@ public class RoomRepositoryTest {
     @Autowired
     private RoomRepository roomRepository;
 
-    /**
-     * A room cannot be available if the hotel cannot be found by its hotel id.
-     */
     @Test
     public void availableRoom_HotelNotFound() {
         Long hotelId = entityManager.persistAndGetId(new Hotel("Hotel Royal",
@@ -47,9 +44,7 @@ public class RoomRepositoryTest {
         assertThat(rooms.getTotalElements()).isEqualTo(0);
     }
 
-    /**
-     * When a hotel has many rooms but only 1 room is free (no reservation assigned) it should be the only room returned.
-     */
+
     @Test
     public void availableRoom_AtLeastOneFree() {
         Hotel hotel = new Hotel("Hotel Royal",
@@ -85,9 +80,7 @@ public class RoomRepositoryTest {
         assertThat(availableRooms.getContent().get(0).getRoomNumber()).isEqualTo("A");
     }
 
-    /**
-     * When a hotel has no free rooms, an empty list should be returned. Note: Both rooms have a non null reservation.
-     */
+
     @Test
     public void availableRoom_NoneFree() {
         Hotel hotel = new Hotel("Hotel Royal",

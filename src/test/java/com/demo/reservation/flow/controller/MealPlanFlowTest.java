@@ -50,10 +50,6 @@ public class MealPlanFlowTest {
 
     // Flow step 4 - meal plans
 
-    /**
-     * Redirects to general extras form when in the meal plans form. Note the flash attributes
-     * used are so the Model is not lost between redirects.
-     */
     @Test
     public void fromMealPlansBackToGeneralExtras() throws Exception {
         ReservationFlow reservationFlow = FlowStages.extrasCompletedFlow();
@@ -67,21 +63,6 @@ public class MealPlanFlowTest {
                 .andExpect(flash().attributeExists("reservationFlow"));
     }
 
-    /**
-     * Assert that the Model contains the expected objects required for template generation.
-     * Since creating meal plans is quite complex we need
-     * <ul>
-     * <li>foodExtras: Each guest will be able to select an extra which will be added to
-     * their {@code MealPlan}
-     * </li>
-     * <li>dietaryRequirements: Each guest will be able to select a dietary requirement which
-     * will be added to their {@code MealPlan}
-     * </li>
-     * <li>Sanity check to ensure each guest has a meal plan created ready to be binded to the thymeleaf view.</li>
-     * <li>reservationFlow: The reservationFlow must still be kept in the Model to continue to stay in the Session.</li>
-     * </ul>
-     * <p>
-     */
     @Test
     public void getMeals_HasValidStartingState() throws Exception {
         ReservationFlow reservationFlow = FlowStages.extrasCompletedFlow();
@@ -123,16 +104,6 @@ public class MealPlanFlowTest {
         verify(reservationSpy, times(1)).createMealPlans();
     }
 
-    /**
-     * When the meal plans are submitted, check the flow step is completed for Meals and
-     * we redirect to the next review view. flash attributes are needed so the Model state is not lost
-     * across the redirect. Since there are no errors, the Model doesn't need to contain the foodExtras or
-     * dietaryRequirements since we are redirecting to a new view.
-     *
-     * <p>We cant test for checking the meal plans have been updated within the reservation since all of that
-     * happens using spring binding infrastructure so would need to make an integration test for that using
-     * {@literal @SpringBootTest}.</p>
-     */
     @Test
     public void postMealPlans_ValidDietaryRequirements() throws Exception {
         ReservationFlow reservationFlow = FlowStages.extrasCompletedFlow();
@@ -161,15 +132,6 @@ public class MealPlanFlowTest {
                 .andExpect(FlowMatchers.flashHasCompletedFlowStep(ReservationFlow.Step.Meals));
     }
 
-    /**
-     * <p>Should get validation error when a guest is vegan and vegetarian at the same time. Can only be
-     * one or the other. Since there are errors, the same Model created when getting the meal plan form
-     * needs to exist otherwise the food extras and dietary requirement checkboxes wont re appear.</p>
-     *
-     * <p>We cant test for checking the meal plans have been updated within the reservation since all of that
-     * happens using spring binding infrastructure so would need to make an integration test for that using
-     * {@literal @SpringBootTest}.</p>
-     */
     @Test
     public void postMealPlans_InvalidDietaryRequirements() throws Exception {
         ReservationFlow reservationFlow = FlowStages.extrasCompletedFlow();
