@@ -15,6 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -39,6 +40,23 @@ public class ReservationController {
         this.roomRepository = roomRepository;
         this.extraRepository = extraRepository;
         this.timeProvider = timeProvider;
+    }
+
+    /**
+     * Restricts data binding on the session scoped reservation flow so request parameters cannot
+     * overwrite server controlled fields such as the authoritative room pricing loaded from the
+     * database. Only the fields legitimately edited by the flow forms are allowed to bind.
+     */
+    @InitBinder("reservationFlow")
+    public void initReservationFlowBinder(WebDataBinder binder) {
+        binder.setDisallowedFields(
+                "reservation.room.*",
+                "reservation.id",
+                "reservation.reservationId",
+                "reservation.createdTime",
+                "reservation.completedPayment",
+                "reservation.completedPayment.*"
+        );
     }
 
     /**
